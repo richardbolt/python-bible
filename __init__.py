@@ -294,7 +294,7 @@ class Passage:
         
         # start and end are in different books
         else:
-            f = self. formatq('B C:V - b c:v')
+            f = self. format('B C:V - b c:v')
         
         # return the formatted value
         return f
