@@ -305,5 +305,3 @@ class Passage:
         
         # return the formatted value
         return f
-
-v = Verse('rom 1:50')
