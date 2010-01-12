@@ -55,11 +55,11 @@ Using Verse Objects:
     
     >>> v1 = bible.Verse('rom1:1')
     >>> v1.book
-    44
+    45
     >>> v1.format('B C:V')
     Romans 1:1
     >>> v1.to_string()
-    44-1-1
+    45-1-1
     
     >>> v = bible.Verse('Romans 17:1')
     ...
