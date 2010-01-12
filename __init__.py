@@ -22,12 +22,12 @@ class Verse:
     def __init__(self, *args):
         """Create a new Verse object - accepts several different inputs:
         
-        Examples: book = 45
+        Examples: book = 46
                   chapter = 2
                   verse = 1
                   Verse(book, chapter, verse)
 
-                  normalized_string = '45-2-1'
+                  normalized_string = '46-2-1'
                   Verse(normalized_string)
 
                   unformatted_string = '1 Cor 2:1'
@@ -84,7 +84,7 @@ class Verse:
         """Try to figure out what verse is intended when given an unstructured string
         and return the standard b-c-v formatted string for the verse.
         
-        E.g. "1cor12:1", "1 Cor 12:1", and "1c 12:1" would all evaluate to "45-12-1" """
+        E.g. "1cor12:1", "1 Cor 12:1", and "1c 12:1" would all evaluate to "46-12-1" """
 
         # dict to hold processed data
         processed = {}
@@ -120,14 +120,14 @@ class Verse:
 
         # check to see if the chapter is in range for the given book
         try:
-            verse_count = bible[processed['book']-1]['verse_counts'][c-1]
+            verse_count = bible[processed['book'] - 1]['verse_counts'][c - 1]
             processed['chapter'] = c
         except:
-            raise RangeError("There are not that many chapters in %s" % (bible[processed['book']-1]['name']))
+            raise RangeError("There are not that many chapters in %s" % (bible[processed['book'] - 1]['name']))
 
         # check to see if the verse is in range for the given chapter
         if verse_count < v:
-            raise RangeError("There is no verse %s in %s %s" % (v, bible[processed['book']-1]['name'], c))
+            raise RangeError("There is no verse %s in %s %s" % (v, bible[processed['book'] - 1]['name'], c))
         else:
             processed['verse'] = v
 
@@ -138,7 +138,7 @@ class Verse:
         """Expects a normalized string in b-c-v format - Given a b-c-v string,
         returns a tuple of the individual values
         
-        E.g. "45-12-1" returns (45,12,1), after checking to make sure the verse exists"""
+        E.g. "46-12-1" returns (46,12,1), after checking to make sure the verse exists"""
     
         if value is None:
             return False
@@ -151,7 +151,7 @@ class Verse:
         book, chapter, verse = map(int, value.split('-'))
     
         try:
-            if bible[book]['verse_counts'][chapter-1] >= verse:
+            if bible[book - 1]['verse_counts'][chapter-1] >= verse:
                 return (book, chapter, verse)
         except:
             raise RangeError('The verse specified does not exist.')
@@ -196,11 +196,11 @@ class Passage:
             else:
                 
                 # get number of verses in start chapter
-                count = bible[self.start.book]['verse_counts'][self.start.chapter - 1] - self.start.verse + 1
+                count = bible[self.start.book-1]['verse_counts'][self.start.chapter - 1] - self.start.verse + 1
 
                 # add number of verses in whole chapters between start and end
                 for chapter in range(self.start.chapter + 1, self.end.chapter):
-                    count += bible[self.start.book]['verse_counts'][chapter - 1]
+                    count += bible[self.start.book - 1]['verse_counts'][chapter - 1]
                 
                 # add the number of verses in the end chapter
                 count += self.end.verse
@@ -209,20 +209,20 @@ class Passage:
         else:
 
             # get number of verses in first chapter of start book
-            count = bible[self.start.book]['verse_counts'][self.start.chapter - 1] - self.start.verse + 1
+            count = bible[self.start.book - 1]['verse_counts'][self.start.chapter - 1] - self.start.verse + 1
             
             # add number of verses in whole chapters of start book
-            for chapter in range(self.start.chapter, len(bible[self.start.book]['verse_counts'])):
-                count += bible[self.start.book]['verse_counts'][chapter]
+            for chapter in range(self.start.chapter, len(bible[self.start.book - 1]['verse_counts'])):
+                count += bible[self.start.book - 1]['verse_counts'][chapter]
             
             # add total number of verses in whole books between start and end
             for book in range(self.start.book + 1, self.end.book):
-                for chapter_count in bible[book]['verse_counts']:
+                for chapter_count in bible[book - 1]['verse_counts']:
                     count += chapter_count
             
             # add number of verses in whole chapters of end book
             for chapter in range(1, self.end.chapter):
-                count += bible[self.end.book]['verse_counts'][chapter - 1]
+                count += bible[self.end.book - 1]['verse_counts'][chapter - 1]
             
             # get the number of verses in last chapter of end book
             count += self.end.verse
@@ -305,3 +305,6 @@ class Passage:
         
         # return the formatted value
         return f
+
+v = Verse('1cor12:1')
+print v.book
