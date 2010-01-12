@@ -12,6 +12,10 @@ ref_re = re.compile(r'\d{1,3}:\d{1,3}')
 # get bible data from data.py
 bible = data.bible_data()
 
+class RangeError(Exception):
+    """Exception class for books, verses, and chapters out of range"""
+    pass
+    
 class Verse:
     """Class to represent a Bible reference (book, chapter, and verse)"""
     
@@ -45,6 +49,9 @@ class Verse:
             except:
                 normalized = self._normalize(args[0])
                 values = self._get_values(normalized)
+        
+        # by this point, we should have a values list with the three parts
+        # let's go ahead and set the class attributes based on them.
         self.book = int(values[0])
         self.chapter = int(values[1])
         self.verse = int(values[2])
@@ -86,7 +93,7 @@ class Verse:
         try:
             b = book_re.search(value).group(0)
         except:
-            raise Exception("We can't find that book of the Bible: %s" % (value))
+            raise RangeError("We can't find that book of the Bible: %s" % (value))
 
         # find the chapter:verse reference
         try:
@@ -106,7 +113,7 @@ class Verse:
                         processed['book'] = i
                         break
         if 'book' not in processed:
-            raise Exception("We can't find that book of the Bible!: %s" % (b))
+            raise RangeError("We can't find that book of the Bible!: %s" % (b))
 
         # extract chapter and verse from ref
         c, v = map(int, ref.split(':'))
@@ -116,11 +123,11 @@ class Verse:
             verse_count = bible[processed['book']]['verse_counts'][c-1]
             processed['chapter'] = c
         except:
-            raise Exception("There are not that many chapters in %s" % (bible[processed['book']]['name']))
+            raise RangeError("There are not that many chapters in %s" % (bible[processed['book']]['name']))
 
         # check to see if the verse is in range for the given chapter
         if verse_count < v:
-            raise Exception("There is no verse %s in %s %s" % (v, bible[processed['book']]['name'], c))
+            raise RangeError("There is no verse %s in %s %s" % (v, bible[processed['book']]['name'], c))
         else:
             processed['verse'] = v
 
@@ -147,7 +154,7 @@ class Verse:
             if bible[book]['verse_counts'][chapter-1] >= verse:
                 return (book, chapter, verse)
         except:
-            raise Exception('The verse specified does not exist.')
+            raise RangeError('The verse specified does not exist.')
 
 
 class Passage:
@@ -298,3 +305,5 @@ class Passage:
         
         # return the formatted value
         return f
+
+v = Verse('rom 1:50')

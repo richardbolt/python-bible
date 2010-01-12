@@ -63,11 +63,11 @@ Using Verse Objects:
     
     >>> v = bible.Verse('Romans 17:1')
     ...
-    Exception: There are not that many chapters in Romans
+    RangeError: There are not that many chapters in Romans
     
     >>> v = bible.Verse('Gen 1:50')
     ...
-    Exception: There is no verse 50 in Genesis 1
+    RangeError: There is no verse 50 in Genesis 1
     
     >>> v = bible.Verse('1-1-1')
     >>> v = bible.Verse('gen1:1')
