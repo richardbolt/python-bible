@@ -1,4 +1,4 @@
-def bible_data(version="NASB"):
+def bible_data(version="ESV"):
     """Return an array with reference data for each book of the bible - based on a specific version"""
     
     # All versions modify base data - it is also used as default if no version is provided
