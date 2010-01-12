@@ -68,8 +68,8 @@ class Verse:
         C - Chapter number
         V - Verse number"""
         
-        val = string.replace(val,'B', bible[self.book]['name'])
-        val = string.replace(val,'A', bible[self.book]['abbrs'][0].title())
+        val = string.replace(val,'B', bible[self.book-1]['name'])
+        val = string.replace(val,'A', bible[self.book-1]['abbrs'][0].title())
         val = string.replace(val,'C', str(self.chapter))
         val = string.replace(val,'V', str(self.verse))
         return val
@@ -105,12 +105,12 @@ class Verse:
         b = b.rstrip('.').lower().strip()
         for i, book in enumerate(bible):
             if book['name'].lower() == b:
-                processed['book'] = i
+                processed['book'] = i + 1
                 break
             else:
                 for abbr in book['abbrs']:
                     if abbr == b:
-                        processed['book'] = i
+                        processed['book'] = i + 1
                         break
         if 'book' not in processed:
             raise RangeError("We can't find that book of the Bible!: %s" % (b))
@@ -120,14 +120,14 @@ class Verse:
 
         # check to see if the chapter is in range for the given book
         try:
-            verse_count = bible[processed['book']]['verse_counts'][c-1]
+            verse_count = bible[processed['book']-1]['verse_counts'][c-1]
             processed['chapter'] = c
         except:
-            raise RangeError("There are not that many chapters in %s" % (bible[processed['book']]['name']))
+            raise RangeError("There are not that many chapters in %s" % (bible[processed['book']-1]['name']))
 
         # check to see if the verse is in range for the given chapter
         if verse_count < v:
-            raise RangeError("There is no verse %s in %s %s" % (v, bible[processed['book']]['name'], c))
+            raise RangeError("There is no verse %s in %s %s" % (v, bible[processed['book']-1]['name'], c))
         else:
             processed['verse'] = v
 
@@ -249,9 +249,9 @@ class Passage:
             
             # replace vals for start verse
             if c == "B":
-                f += bible[self.start.book]['name']
+                f += bible[self.start.book-1]['name']
             elif c == "A":
-                f += bible[self.start.book]['abbrs'][0].title()
+                f += bible[self.start.book-1]['abbrs'][0].title()
             elif c == "C":
                 f += str(self.start.chapter)
             elif c == "V":
@@ -259,9 +259,9 @@ class Passage:
             
             # replace vals for end verse
             elif c == "b":
-                f += bible[self.end.book]['name']
+                f += bible[self.end.book-1]['name']
             elif c == "a":
-                f += bible[self.end.book]['abbrs'][0].title()
+                f += bible[self.end.book-1]['abbrs'][0].title()
             elif c == "c":
                 f += str(self.end.chapter)
             elif c == "v":
