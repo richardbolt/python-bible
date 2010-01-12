@@ -1,6 +1,8 @@
-# array with reference data for each book of the bible
-def bible_data():
-    return [
+def bible_data(version="NASB"):
+    """Return an array with reference data for each book of the bible - based on a specific version"""
+    
+    # All versions modify base data - it is also used as default if no version is provided
+    bible = [
         {
             'testament': 'OT',
             'verse_counts': [31, 25, 24, 26, 32, 22, 24, 22, 29, 32, 32, 20, 18, 24, 21, 16, 27, 33, 38, 18, 34, 24, 20, 67, 34, 35, 46, 22, 35, 43, 55, 32, 20, 31, 29, 43, 36, 30, 23, 23, 57, 38, 34, 34, 28, 34, 31, 22, 33, 26],
@@ -392,3 +394,63 @@ def bible_data():
             'abbrs': ['rev', 're', 'rv', 'revel']
         }
     ]
+    
+    # add omissions by version
+    if version in ('RSV', 'ESV'):
+        bible = add_omission(bible, 40, 12, 47)      # Matt 12:47
+        bible = add_omission(bible, 42, 24, 40)      # Luke 24:40
+        bible = add_omission(bible, 43, 7, 53)       # John 7:53
+        bible = add_omission(bible, 43, 8, 1, 11)    # John 8:1-11 -- Need to double check this - may just be foot note
+    if version in ('RSV'):
+        bible = add_omission(bible, 40, 21, 44)      # Matt 21:44
+        bible = add_omission(bible, 42, 22, 43, 44)  # Luke 22:43-44
+        bible = add_omission(bible, 42, 24, 12)      # Luke 24:12
+        bible = add_omission(bible, 47, 13, 14)      # 2 Cor 13:14
+        bible = add_omission(bible, 59, 1, 8)        # Jam 1:8
+    if version in ('NIV', 'NASB', 'RSV', 'NRSV', 'NCV', 'ESV'):
+        bible = add_omission(bible, 40, 17, 21)      # Matt 17:21
+        bible = add_omission(bible, 40, 18, 11)      # Matt 18:11
+        bible = add_omission(bible, 40, 23, 14)      # Matt 23:14
+        bible = add_omission(bible, 41, 15, 28)      # Mark 15:28
+        bible = add_omission(bible, 42, 17, 36)      # Luke 17:36
+        bible = add_omission(bible, 43, 5, 4)        # John 5:4
+        bible = add_omission(bible, 44, 8, 37)       # Acts 8:37
+        bible = add_omission(bible, 45, 16, 24)      # Rom 16:24
+        bible = add_omission(bible, 44, 24, 7)       # Acts 24:7
+    if version in ('NIV', 'NASB', 'RSV', 'NRSV', 'NCV', 'ESV', 'LB'):
+        bible = add_omission(bible, 41, 7, 16)       # Mark 7:16
+        bible = add_omission(bible, 41, 9, 44)       # Mark 9:44
+        bible = add_omission(bible, 41, 9, 46)       # Mark 9:46
+        bible = add_omission(bible, 41, 11, 26)      # Mark 11:26
+        bible = add_omission(bible, 42, 23, 17)      # Luke 23:17
+        bible = add_omission(bible, 44, 15, 34)      # Acts 15:34
+        bible = add_omission(bible, 44, 28, 29)      # Acts 28:29
+    
+    # send back the bible list var
+    return bible
+
+def add_omission(bible, book, chapter, verse, endverse=None):
+    """Add a verse or range of verses as omitted from this version of the Bible"""
+    
+    # get reference var to omissions - create if it does not exist
+    if 'omissions' not in bible[book-1]:
+        bible[book-1]['omissions'] = []
+    omissions = bible[book-1]['omissions']
+    
+    # add blank placeholders to get index of omissions up to the chapter
+    if chapter > len(omissions):
+        for i in range(chapter - len(omissions)):
+            omissions.append(None)
+    
+    # if omissions for chapter index do not exist, create empty array
+    if not omissions[chapter-1]:
+        omissions[chapter-1] = []
+    
+    # append verses to chapter index of omissions list
+    if not endverse:
+        omissions[chapter-1].append(verse)
+    else:
+        for v in range(verse, endverse + 1):
+            omissions[chapter-1].append(v)
+    
+    return bible
