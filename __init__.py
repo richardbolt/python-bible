@@ -305,6 +305,3 @@ class Passage:
         
         # return the formatted value
         return f
-
-v = Verse('1cor12:1')
-print v.book
