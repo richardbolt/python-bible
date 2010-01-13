@@ -26,10 +26,10 @@ class Verse:
                   chapter = 2
                   verse = 1
                   Verse(book, chapter, verse)
-
+                  
                   normalized_string = '46-2-1'
                   Verse(normalized_string)
-
+                  
                   unformatted_string = '1 Cor 2:1'
                   Verse(unformatted_string)"""
         
@@ -68,39 +68,54 @@ class Verse:
         C - Chapter number
         V - Verse number"""
         
-        val = string.replace(val,'B', bible[self.book-1]['name'])
-        val = string.replace(val,'A', bible[self.book-1]['abbrs'][0].title())
-        val = string.replace(val,'C', str(self.chapter))
-        val = string.replace(val,'V', str(self.verse))
-        return val
-
+        # create blank string to hold output
+        f = ""
+        
+        # iterate over letters in val string passed in to method
+        for c in val:
+            
+            # replace vals for start verse
+            if c == "B":
+                f += bible[self.book-1]['name']
+            elif c == "A":
+                f += bible[self.book-1]['abbrs'][0].title()
+            elif c == "C":
+                f += str(self.chapter)
+            elif c == "V":
+                f += str(self.verse)
+            else:
+                f += c
+        
+        # return the formatted value
+        return f
+    
     def to_string(self):
         """Casts a verse object into a normalized string
         This is especially useful for saving to a database"""
         
         return str(self.book) + '-' + str(self.chapter) + '-' + str(self.verse)
-
+    
     def _normalize(self, value):
         """Try to figure out what verse is intended when given an unstructured string
         and return the standard b-c-v formatted string for the verse.
         
         E.g. "1cor12:1", "1 Cor 12:1", and "1c 12:1" would all evaluate to "46-12-1" """
-
+        
         # dict to hold processed data
         processed = {}
-
+        
         # find the book reference
         try:
             b = book_re.search(value).group(0)
         except:
             raise RangeError("We can't find that book of the Bible: %s" % (value))
-
+        
         # find the chapter:verse reference
         try:
             ref = ref_re.search(value).group(0)
         except:
             raise Exception("We can't make sense of your chapter:verse reference")
-
+        
         # try to find the book listed as a book name or abbreviation
         b = b.rstrip('.').lower().strip()
         for i, book in enumerate(bible):
@@ -114,42 +129,42 @@ class Verse:
                         break
         if 'book' not in processed:
             raise RangeError("We can't find that book of the Bible!: %s" % (b))
-
+        
         # extract chapter and verse from ref
         c, v = map(int, ref.split(':'))
-
+        
         # check to see if the chapter is in range for the given book
         try:
             verse_count = bible[processed['book'] - 1]['verse_counts'][c - 1]
             processed['chapter'] = c
         except:
             raise RangeError("There are not that many chapters in %s" % (bible[processed['book'] - 1]['name']))
-
+        
         # check to see if the verse is in range for the given chapter
         if verse_count < v:
             raise RangeError("There is no verse %s in %s %s" % (v, bible[processed['book'] - 1]['name'], c))
         else:
             processed['verse'] = v
-
+        
         # return the processed data as a normalized verse string in b-c-v format
         return str(processed['book']) + '-' + str(processed['chapter']) + '-' + str(processed['verse'])
-
+    
     def _get_values(self, value):
         """Expects a normalized string in b-c-v format - Given a b-c-v string,
         returns a tuple of the individual values
         
         E.g. "46-12-1" returns (46,12,1), after checking to make sure the verse exists"""
-    
+        
         if value is None:
             return False
-
+        
         if not verse_re.search(value):
             raise Exception('String should be in normalized b-c-v format.')
-    
+        
         # now that we have the date string in B-C-V format, check to make
         # sure it's a valid verse.
         book, chapter, verse = map(int, value.split('-'))
-    
+        
         try:
             if bible[book - 1]['verse_counts'][chapter-1] >= verse:
                 return (book, chapter, verse)
@@ -197,7 +212,7 @@ class Passage:
                 
                 # get number of verses in start chapter
                 count = bible[self.start.book-1]['verse_counts'][self.start.chapter - 1] - self.start.verse + 1
-
+                
                 # add number of verses in whole chapters between start and end
                 for chapter in range(self.start.chapter + 1, self.end.chapter):
                     count += bible[self.start.book - 1]['verse_counts'][chapter - 1]
@@ -207,7 +222,7 @@ class Passage:
         
         # start and end are in different books
         else:
-
+            
             # get number of verses in first chapter of start book
             count = bible[self.start.book - 1]['verse_counts'][self.start.chapter - 1] - self.start.verse + 1
             
