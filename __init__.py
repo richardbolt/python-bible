@@ -184,12 +184,14 @@ class Passage:
                   Passage(v1, v2)
                   
                   Passage('Rom. 1:1', 'Rom. 1:8')"""
-                  
-        if start.__class__ == Verse:
+        
+        # if the args passed were objects, add them to the Passage
+        # directly, otherwise try to interpret them as strings  
+        if type(start).__name__ == 'instance':
             self.start = start
         else:
             self.start = Verse(start)
-        if end.__class__ == Verse:
+        if type(end).__name__ == 'instance':
             self.end = end
         else:
             self.end = Verse(end)

@@ -95,3 +95,38 @@ Using Passage Objects:
     >>> p = bible.Passage(v1,v2)
     >>> p = bible.Passage(v1, 'Romans 1:8')
     >>> p = bible.Passage('rom1:1','rom1:8')
+
+Django Forms
+------------
+We've added a few additional classes to make it easy for you to use the bible
+module in your Django models. Here's how:
+
+    from bible.djangoforms import VerseField
+    
+    class Scripture(models.Model):
+        """Sample model class using the VerseField type from the bible module"""
+        start_verse = VerseField()
+        end_verse = VerseField()
+
+Used in the Django admin, or in your own forms, this will let the user enter
+a verse in plain English, and attempt to interpret it into a Verse object.
+If an exception is thrown, it will be passed through to the form for the user
+to fix it.
+
+In the specific example above, given a model with start and end verses, a
+Passage object could be created in your view by combining the two Verse objects:
+
+    from bible import Passage
+    from myproject.myapp.models import Scripture
+    
+    s = Scripture.objects.get(id=1)
+    passage = Passage(s.start_verse, s.end_verse)
+
+Which would then let you do something like this in your templates, assuming
+you passed the passage variable in to the template context:
+
+    {{ passage.smart_format }}
+
+There are no template tags or filters built in to the module yet, but they
+would definitely be a good addition (thinking specifically of implementing
+a template filter for Verse.format() like the date filters built in to Django)
