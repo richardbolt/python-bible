@@ -40,6 +40,8 @@ class Verse:
             self.verse = args[2]
             if len(args) == 4:
                 self.translation = args[3]
+            else:
+                self.translation = None
             
         # if we only got one value, lets try to figure it out
         elif len(args) == 1:
@@ -56,6 +58,8 @@ class Verse:
                 self.book, self.chapter, self.verse = map(int, parts[:3])
                 if len(parts) > 3:
                     self.translation = parts[3]
+                else:
+                    self.translation = None
             
             # if not, let's try to extract the values
             except:
@@ -75,11 +79,11 @@ class Verse:
                 # find the translation, if provided
                 try:
                     self.translation = translation_re.search(args[0]).group(0).upper()
-                    self.bible = data.bible_data(self.translation)
                 except:
-                    self.bible = data.bible_data()
-
+                    self.translation = None
+                
                 # try to find the book listed as a book name or abbreviation
+                self.bible = data.bible_data(self.translation)
                 b = b.rstrip('.').lower().strip()
                 for i, book in enumerate(self.bible):
                     if book['name'].lower() == b:
@@ -97,6 +101,10 @@ class Verse:
 
                 # extract chapter and verse from ref
                 self.chapter, self.verse = map(int, ref.split(':'))
+        
+        # if we didn't add the bible attribute above, add it now
+        if 'bible' not in self.__dict__:
+            self.bible = data.bible_data(self.translation)
         
         # check to see if the chapter is in range for the given book
         try:
@@ -174,6 +182,10 @@ class Passage:
             self.end = end
         else:
             self.end = Verse(end)
+        
+        # make sure start and end verses are in the same translation
+        if self.start.translation != self.end.translation:
+            raise Exception('Verse must be in the same translation to form a Passage')
     
     def __unicode__(self):
         return self.smart_format()
@@ -226,26 +238,33 @@ class Passage:
         # return the count
         return count
     
-    def format(self, val="B C:V - b c:v"):
+    def format(self, val=None):
         """Return a formatted string to represent the passage
         Letters are substituted for verse attributes, like date formatting
         Lowercase letters (a, b, c, and v) refer to end verse reference
         The letter P inserts the smart_format() string for the passage"""
         
-        # create blank string to hold output
-        f = ""
+        # if we got a string, process it and return formatted verse
+        if val:
+            
+            # create blank string to hold output
+            f = ""
         
-        # iterate over letters in val string passed in to method
-        for c in val:
-            if c == "P":
-                f += self.smart_format()
-            elif c.isupper():
-                f += _format_char(self.start, c)
-            else:
-                f += _format_char(self.end, c)
+            # iterate over letters in val string passed in to method
+            for c in val:
+                if c == "P":
+                    f += self.smart_format()
+                elif c.isupper():
+                    f += _format_char(self.start, c)
+                else:
+                    f += _format_char(self.end, c)
         
-        # return formatted string
-        return f.strip()
+            # return formatted string
+            return f.strip()
+        
+        # if we didn't get a formatting string, send back the smart_format()
+        else:
+            return self.smart_format()
     
     def smart_format(self):
         """Display a human-readible string for passage
