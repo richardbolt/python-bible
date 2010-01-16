@@ -3,11 +3,12 @@ import string
 import data
 
 # regular expressions for matching a valid normalized verse string
-verse_re = re.compile(r'^\d{1,2}-\d{1,3}-\d{1,3}$')
+verse_re = re.compile(r'^\d{1,2}-\d{1,3}-\d{1,3}(-[a-zA-Z]{2,})?$')
 
 # regular expressions for identifying book, and chapter:verse references
 book_re = re.compile(r'^\d*[a-zA-Z ]*')
 ref_re = re.compile(r'\d{1,3}:\d{1,3}')
+translation_re = re.compile(r'[a-zA-Z]{2,}$')
 
 # get bible data from data.py
 bible = data.bible_data()
@@ -55,45 +56,40 @@ class Verse:
         self.book = int(values[0])
         self.chapter = int(values[1])
         self.verse = int(values[2])
+        
+        # if there is a fourth value, load it in as the translation
+        if len(values) > 3:
+            self.translation = str(values[3])
     
     def __unicode__(self):
         return self.format('B C:V')
     
     def format(self, val):
         """Return a formatted string to represent the verse
-        Letters are substituted for verse attributes, like date formatting
-        
-        A - Book abbreviation (e.g. "Gen", "Rom")
-        B - Full book name (e.g. "Genesis", "Romans")
-        C - Chapter number
-        V - Verse number"""
+        Letters are substituted for verse attributes, like date formatting"""
         
         # create blank string to hold output
         f = ""
         
         # iterate over letters in val string passed in to method
         for c in val:
-            
-            # replace vals for start verse
-            if c == "B":
-                f += bible[self.book-1]['name']
-            elif c == "A":
-                f += bible[self.book-1]['abbrs'][0].title()
-            elif c == "C":
-                f += str(self.chapter)
-            elif c == "V":
-                f += str(self.verse)
-            else:
-                f += c
+            f += _format_char(self, c)
         
         # return the formatted value
-        return f
+        return f.strip()
     
     def to_string(self):
         """Casts a verse object into a normalized string
         This is especially useful for saving to a database"""
         
-        return str(self.book) + '-' + str(self.chapter) + '-' + str(self.verse)
+        # set the base string to book, chapter, and verse number
+        v = "%s-%s-%s" % (str(self.book), str(self.chapter), str(self.verse))
+        
+        # try to add the version to the string - if not set, just return the base string
+        try:
+            return v + '-' + str(self.translation)
+        except:
+            return v
     
     def _normalize(self, value):
         """Try to figure out what verse is intended when given an unstructured string
@@ -128,7 +124,7 @@ class Verse:
                         processed['book'] = i + 1
                         break
         if 'book' not in processed:
-            raise RangeError("We can't find that book of the Bible!: %s" % (b))
+            raise RangeError("We can't find that book of the Bible!: " + b)
         
         # extract chapter and verse from ref
         c, v = map(int, ref.split(':'))
@@ -138,19 +134,31 @@ class Verse:
             verse_count = bible[processed['book'] - 1]['verse_counts'][c - 1]
             processed['chapter'] = c
         except:
-            raise RangeError("There are not that many chapters in %s" % (bible[processed['book'] - 1]['name']))
+            raise RangeError("There are not that many chapters in" + bible[processed['book'] - 1]['name'])
         
         # check to see if the verse is in range for the given chapter
         if verse_count < v:
             raise RangeError("There is no verse %s in %s %s" % (v, bible[processed['book'] - 1]['name'], c))
         else:
             processed['verse'] = v
+
+        # get translation, if provided
+        try:
+            processed['translation'] = translation_re.search(value).group(0).upper()
+        except:
+            pass
         
-        # return the processed data as a normalized verse string in b-c-v format
-        return str(processed['book']) + '-' + str(processed['chapter']) + '-' + str(processed['verse'])
+        # set the base string to book, chapter, and verse number
+        v = "%s-%s-%s" % (str(processed['book']), str(processed['chapter']), str(processed['verse']))
+        
+        # try to add the version to the string - if not set, just return the base string
+        try:
+            return v + '-' + str(processed['translation'])
+        except:
+            return v
     
     def _get_values(self, value):
-        """Expects a normalized string in b-c-v format - Given a b-c-v string,
+        """Expects a normalized string in b-c-v(-t) format - Given a normalized string,
         returns a tuple of the individual values
         
         E.g. "46-12-1" returns (46,12,1), after checking to make sure the verse exists"""
@@ -158,16 +166,23 @@ class Verse:
         if value is None:
             return False
         
+        # check to make sure we have a valid verse string
         if not verse_re.search(value):
-            raise Exception('String should be in normalized b-c-v format.')
+            raise Exception('String should be in normalized b-c-v(-t) format.')
         
-        # now that we have the date string in B-C-V format, check to make
-        # sure it's a valid verse.
-        book, chapter, verse = map(int, value.split('-'))
+        # extract the parts from the string
+        parts = value.split('-')
+        book, chapter, verse = map(int, parts[:3])
+        if len(parts) > 3:
+            translation = parts[3]
         
+        # now that we have the verse parts, let's check to make sure it's a valid verse.
         try:
             if bible[book - 1]['verse_counts'][chapter-1] >= verse:
-                return (book, chapter, verse)
+                if len(parts) > 3:
+                    return (book, chapter, verse, translation)
+                else:
+                    return (book, chapter, verse)
         except:
             raise RangeError('The verse specified does not exist.')
 
@@ -250,46 +265,23 @@ class Passage:
     def format(self, val):
         """Return a formatted string to represent the passage
         Letters are substituted for verse attributes, like date formatting
-        
-        A - Book abbreviation (e.g. "Gen", "Rom")
-        B - Full book name (e.g. "Genesis", "Romans")
-        C - Chapter number
-        V - Verse number
-        
-        Lowercase letters (a, b, c, and v) refer to end verse reference"""
+        Lowercase letters (a, b, c, and v) refer to end verse reference
+        The letter P inserts the smart_format() string for the passage"""
         
         # create blank string to hold output
         f = ""
         
         # iterate over letters in val string passed in to method
         for c in val:
-            
-            # replace vals for start verse
-            if c == "B":
-                f += bible[self.start.book-1]['name']
-            elif c == "A":
-                f += bible[self.start.book-1]['abbrs'][0].title()
-            elif c == "C":
-                f += str(self.start.chapter)
-            elif c == "V":
-                f += str(self.start.verse)
-            
-            # replace vals for end verse
-            elif c == "b":
-                f += bible[self.end.book-1]['name']
-            elif c == "a":
-                f += bible[self.end.book-1]['abbrs'][0].title()
-            elif c == "c":
-                f += str(self.end.chapter)
-            elif c == "v":
-                f += str(self.end.verse)
-            
-            # if this isn't a format char, just pass it through to output
+            if c == "P":
+                f += self.smart_format()
+            elif c.isupper():
+                f += _format_char(self.start, c)
             else:
-                f += c
+                f += _format_char(self.end, c)
         
         # return formatted string
-        return f
+        return f.strip()
     
     def smart_format(self):
         """Display a human-readible string for passage
@@ -322,3 +314,34 @@ class Passage:
         
         # return the formatted value
         return f
+
+
+def _format_char(verse, char):
+    """return a string for the part of a verse represented by a
+    formatting char:
+    
+    A - Book abbreviation (e.g. "Gen", "Rom")
+    B - Full book name (e.g. "Genesis", "Romans")
+    C - Chapter number
+    V - Verse number
+    T - Translation"""
+    
+    # use uppercase letter for comparison
+    c = char.upper()
+    
+    # replace vals for start verse
+    if c == "B":
+        return bible[verse.book-1]['name']
+    elif c == "A":
+        return bible[verse.book-1]['abbrs'][0].title()
+    elif c == "C":
+        return str(verse.chapter)
+    elif c == "V":
+        return str(verse.verse)
+    elif c == "T":
+        try:
+            return str(verse.translation)
+        except:
+            return ""
+    else:
+        return char
