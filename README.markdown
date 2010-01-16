@@ -9,6 +9,13 @@ of a Bible verse or passage - it is just for working with and displaying
 the reference to the verses. Other tools and APIs can be used to grab and
 display the actual verse text for a reference.
 
+Including the translation in a Verse object is optional, but if used, the
+omitted verses will be accounted for when interacting with the Verse or
+Passage that it is in. Passages can not combine two Verse objects that are
+not from the same translation. While any translation can be entered and
+stored in the objects, the only ones with special data are: ESV, RSV, NIV,
+NASB, NRSV, NCV, and LB.
+
 
 Verse Object
 ------------
@@ -17,6 +24,7 @@ Attributes
 * book (book of Bible: 1-66)
 * chapter (chapter number)
 * verse (verse number)
+* translation (string: "ESV", "NASB", etc - or None)
 
 Methods
 
@@ -36,6 +44,7 @@ Methods
 * length()  # total number of verses included in passage
 * format(format_string)  # outputs a nicely formatted string
 * smart_format()  # outputs the most common human-readable string for a passage
+* includes(verse) # checks to see if a Verse is included in the Passage
 
 
 Installation
@@ -92,6 +101,8 @@ Using Passage Objects:
     8
     >>> p.length()
     8
+    >>> p.includes(Verse('rom1:4'))
+    True
     >>> p.format('B C:V to b:c:v')
     Romans 1:1 to Romans 1:8
     >>> p.smart_format()
@@ -100,6 +111,7 @@ Using Passage Objects:
     >>> p = bible.Passage(v1,v2)
     >>> p = bible.Passage(v1, 'Romans 1:8')
     >>> p = bible.Passage('rom1:1','rom1:8')
+
 
 Django Forms
 ------------
