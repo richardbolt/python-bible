@@ -1,5 +1,5 @@
-def bible_data(version="ESV"):
-    """Return an array with reference data for each book of the bible - based on a specific version"""
+def bible_data(translation=""):
+    """Return an array with reference data for each book of the bible - based on a specific translation"""
     
     # All versions modify base data - it is also used as default if no version is provided
     bible = [
@@ -396,18 +396,18 @@ def bible_data(version="ESV"):
     ]
     
     # add omissions by version
-    if version in ('RSV', 'ESV'):
+    if translation in ('RSV', 'ESV'):
         bible = add_omission(bible, 40, 12, 47)      # Matt 12:47
         bible = add_omission(bible, 42, 24, 40)      # Luke 24:40
         bible = add_omission(bible, 43, 7, 53)       # John 7:53
-        bible = add_omission(bible, 43, 8, 1, 11)    # John 8:1-11 -- Need to double check this - may just be foot note
-    if version in ('RSV'):
+        #bible = add_omission(bible, 43, 8, 1, 11)    # John 8:1-11 -- Need to double check this - may just be foot note
+    if translation in ('RSV'):
         bible = add_omission(bible, 40, 21, 44)      # Matt 21:44
         bible = add_omission(bible, 42, 22, 43, 44)  # Luke 22:43-44
         bible = add_omission(bible, 42, 24, 12)      # Luke 24:12
         bible = add_omission(bible, 47, 13, 14)      # 2 Cor 13:14
         bible = add_omission(bible, 59, 1, 8)        # Jam 1:8
-    if version in ('NIV', 'NASB', 'RSV', 'NRSV', 'NCV', 'ESV'):
+    if translation in ('NIV', 'NASB', 'RSV', 'NRSV', 'NCV', 'ESV'):
         bible = add_omission(bible, 40, 17, 21)      # Matt 17:21
         bible = add_omission(bible, 40, 18, 11)      # Matt 18:11
         bible = add_omission(bible, 40, 23, 14)      # Matt 23:14
@@ -417,7 +417,7 @@ def bible_data(version="ESV"):
         bible = add_omission(bible, 44, 8, 37)       # Acts 8:37
         bible = add_omission(bible, 45, 16, 24)      # Rom 16:24
         bible = add_omission(bible, 44, 24, 7)       # Acts 24:7
-    if version in ('NIV', 'NASB', 'RSV', 'NRSV', 'NCV', 'ESV', 'LB'):
+    if translation in ('NIV', 'NASB', 'RSV', 'NRSV', 'NCV', 'ESV', 'LB'):
         bible = add_omission(bible, 41, 7, 16)       # Mark 7:16
         bible = add_omission(bible, 41, 9, 44)       # Mark 9:44
         bible = add_omission(bible, 41, 9, 46)       # Mark 9:46

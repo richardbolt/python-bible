@@ -10,9 +10,6 @@ book_re = re.compile(r'^\d*[a-zA-Z ]*')
 ref_re = re.compile(r'\d{1,3}:\d{1,3}')
 translation_re = re.compile(r'[a-zA-Z]{2,}$')
 
-# get bible data from data.py
-bible = data.bible_data()
-
 class RangeError(Exception):
     """Exception class for books, verses, and chapters out of range"""
     pass
@@ -31,40 +28,102 @@ class Verse:
                   normalized_string = '46-2-1'
                   Verse(normalized_string)
                   
-                  unformatted_string = '1 Cor 2:1'
+                  unformatted_string = '1 Cor 12:1'
+                  unformatted_string = '1cor12:1'
+                  unformatted_string = '1c 12:1'
                   Verse(unformatted_string)"""
         
-        
-        # if we got 3 values, let's assume they are book, chapter, verse)
-        if len(args) == 3:
-            values = args
+        # if we got 3 or 4 values, let's assume they are book, chapter, verse, translation)
+        if len(args) >= 3:
+            self.book = args[0]
+            self.chapter = args[1]
+            self.verse = args[2]
+            if len(args) == 4:
+                self.translation = args[3]
             
         # if we only got one value, lets try to figure it out
         elif len(args) == 1:
             
-            # maybe we got a normalized b-c-v string
+            # maybe we got a normalized b-c-v(-t) string
             try:
-                values = self._get_values(args[0])
+                
+                # check to make sure we have a valid verse string
+                if not verse_re.search(args[0]):
+                    raise Exception('String should be in normalized b-c-v(-t) format.')
+
+                # extract the parts from the string
+                parts = args[0].split('-')
+                self.book, self.chapter, self.verse = map(int, parts[:3])
+                if len(parts) > 3:
+                    self.translation = parts[3]
             
-            # if not, let's try to normalize it first and then extract values
+            # if not, let's try to extract the values
             except:
-                normalized = self._normalize(args[0])
-                values = self._get_values(normalized)
+
+                # find the book reference
+                try:
+                    b = book_re.search(args[0]).group(0)
+                except:
+                    raise RangeError("We can't find that book of the Bible: %s" % (args[0]))
+
+                # find the chapter:verse reference
+                try:
+                    ref = ref_re.search(args[0]).group(0)
+                except:
+                    raise Exception("We can't make sense of your chapter:verse reference")
+
+                # find the translation, if provided
+                try:
+                    self.translation = translation_re.search(args[0]).group(0).upper()
+                    self.bible = data.bible_data(self.translation)
+                except:
+                    self.bible = data.bible_data()
+
+                # try to find the book listed as a book name or abbreviation
+                b = b.rstrip('.').lower().strip()
+                for i, book in enumerate(self.bible):
+                    if book['name'].lower() == b:
+                        found = i + 1
+                        break
+                    else:
+                        for abbr in book['abbrs']:
+                            if abbr == b:
+                                found = i + 1
+                                break
+                try:
+                    self.book = found
+                except:
+                    raise RangeError("We can't find that book of the Bible!: " + b)
+
+                # extract chapter and verse from ref
+                self.chapter, self.verse = map(int, ref.split(':'))
         
-        # by this point, we should have a values list with the three parts
-        # let's go ahead and set the class attributes based on them.
-        self.book = int(values[0])
-        self.chapter = int(values[1])
-        self.verse = int(values[2])
+        # check to see if the chapter is in range for the given book
+        try:
+            verse_count = self.bible[self.book - 1]['verse_counts'][self.chapter - 1]
+        except:
+            raise RangeError("There are not that many chapters in" + self.bible[self.book - 1]['name'])
+
+        # check to see if the verse is in range for the given chapter
+        if verse_count < self.verse:
+            raise RangeError("There is no verse %s in %s %s" % (self.verse, self.bible[self.book - 1]['name'], self.chapter))
         
-        # if there is a fourth value, load it in as the translation
-        if len(values) > 3:
-            self.translation = str(values[3])
-    
+        # check to see if the specified verse is omitted
+        try:
+            omitted = self.verse in self.bible[self.book - 1]['omissions'][self.chapter-1]
+            try:
+                err = 'This verse is omitted from the %s translation.' % self.translation
+            except:
+                err = 'This verse is omitted from all modern translations.'
+        except:
+            omitted = False
+        if omitted:
+            raise RangeError(err)
+            
     def __unicode__(self):
-        return self.format('B C:V')
+        return self.format()
     
-    def format(self, val):
+    def format(self, val="B C:V"):
         """Return a formatted string to represent the verse
         Letters are substituted for verse attributes, like date formatting"""
         
@@ -90,102 +149,7 @@ class Verse:
             return v + '-' + str(self.translation)
         except:
             return v
-    
-    def _normalize(self, value):
-        """Try to figure out what verse is intended when given an unstructured string
-        and return the standard b-c-v formatted string for the verse.
         
-        E.g. "1cor12:1", "1 Cor 12:1", and "1c 12:1" would all evaluate to "46-12-1" """
-        
-        # dict to hold processed data
-        processed = {}
-        
-        # find the book reference
-        try:
-            b = book_re.search(value).group(0)
-        except:
-            raise RangeError("We can't find that book of the Bible: %s" % (value))
-        
-        # find the chapter:verse reference
-        try:
-            ref = ref_re.search(value).group(0)
-        except:
-            raise Exception("We can't make sense of your chapter:verse reference")
-        
-        # try to find the book listed as a book name or abbreviation
-        b = b.rstrip('.').lower().strip()
-        for i, book in enumerate(bible):
-            if book['name'].lower() == b:
-                processed['book'] = i + 1
-                break
-            else:
-                for abbr in book['abbrs']:
-                    if abbr == b:
-                        processed['book'] = i + 1
-                        break
-        if 'book' not in processed:
-            raise RangeError("We can't find that book of the Bible!: " + b)
-        
-        # extract chapter and verse from ref
-        c, v = map(int, ref.split(':'))
-        
-        # check to see if the chapter is in range for the given book
-        try:
-            verse_count = bible[processed['book'] - 1]['verse_counts'][c - 1]
-            processed['chapter'] = c
-        except:
-            raise RangeError("There are not that many chapters in" + bible[processed['book'] - 1]['name'])
-        
-        # check to see if the verse is in range for the given chapter
-        if verse_count < v:
-            raise RangeError("There is no verse %s in %s %s" % (v, bible[processed['book'] - 1]['name'], c))
-        else:
-            processed['verse'] = v
-
-        # get translation, if provided
-        try:
-            processed['translation'] = translation_re.search(value).group(0).upper()
-        except:
-            pass
-        
-        # set the base string to book, chapter, and verse number
-        v = "%s-%s-%s" % (str(processed['book']), str(processed['chapter']), str(processed['verse']))
-        
-        # try to add the version to the string - if not set, just return the base string
-        try:
-            return v + '-' + str(processed['translation'])
-        except:
-            return v
-    
-    def _get_values(self, value):
-        """Expects a normalized string in b-c-v(-t) format - Given a normalized string,
-        returns a tuple of the individual values
-        
-        E.g. "46-12-1" returns (46,12,1), after checking to make sure the verse exists"""
-        
-        if value is None:
-            return False
-        
-        # check to make sure we have a valid verse string
-        if not verse_re.search(value):
-            raise Exception('String should be in normalized b-c-v(-t) format.')
-        
-        # extract the parts from the string
-        parts = value.split('-')
-        book, chapter, verse = map(int, parts[:3])
-        if len(parts) > 3:
-            translation = parts[3]
-        
-        # now that we have the verse parts, let's check to make sure it's a valid verse.
-        try:
-            if bible[book - 1]['verse_counts'][chapter-1] >= verse:
-                if len(parts) > 3:
-                    return (book, chapter, verse, translation)
-                else:
-                    return (book, chapter, verse)
-        except:
-            raise RangeError('The verse specified does not exist.')
-
 
 class Passage:
     """A passage of scripture with start and end verses"""
@@ -228,11 +192,11 @@ class Passage:
             else:
                 
                 # get number of verses in start chapter
-                count = bible[self.start.book-1]['verse_counts'][self.start.chapter - 1] - self.start.verse + 1
+                count = self.bible[self.start.book-1]['verse_counts'][self.start.chapter - 1] - self.start.verse + 1
                 
                 # add number of verses in whole chapters between start and end
                 for chapter in range(self.start.chapter + 1, self.end.chapter):
-                    count += bible[self.start.book - 1]['verse_counts'][chapter - 1]
+                    count += self.bible[self.start.book - 1]['verse_counts'][chapter - 1]
                 
                 # add the number of verses in the end chapter
                 count += self.end.verse
@@ -241,20 +205,20 @@ class Passage:
         else:
             
             # get number of verses in first chapter of start book
-            count = bible[self.start.book - 1]['verse_counts'][self.start.chapter - 1] - self.start.verse + 1
+            count = self.bible[self.start.book - 1]['verse_counts'][self.start.chapter - 1] - self.start.verse + 1
             
             # add number of verses in whole chapters of start book
-            for chapter in range(self.start.chapter, len(bible[self.start.book - 1]['verse_counts'])):
-                count += bible[self.start.book - 1]['verse_counts'][chapter]
+            for chapter in range(self.start.chapter, len(self.bible[self.start.book - 1]['verse_counts'])):
+                count += self.bible[self.start.book - 1]['verse_counts'][chapter]
             
             # add total number of verses in whole books between start and end
             for book in range(self.start.book + 1, self.end.book):
-                for chapter_count in bible[book - 1]['verse_counts']:
+                for chapter_count in self.bible[book - 1]['verse_counts']:
                     count += chapter_count
             
             # add number of verses in whole chapters of end book
             for chapter in range(1, self.end.chapter):
-                count += bible[self.end.book - 1]['verse_counts'][chapter - 1]
+                count += self.bible[self.end.book - 1]['verse_counts'][chapter - 1]
             
             # get the number of verses in last chapter of end book
             count += self.end.verse
@@ -262,7 +226,7 @@ class Passage:
         # return the count
         return count
     
-    def format(self, val):
+    def format(self, val="B C:V - b c:v"):
         """Return a formatted string to represent the passage
         Letters are substituted for verse attributes, like date formatting
         Lowercase letters (a, b, c, and v) refer to end verse reference
@@ -331,9 +295,9 @@ def _format_char(verse, char):
     
     # replace vals for start verse
     if c == "B":
-        return bible[verse.book-1]['name']
+        return verse.bible[verse.book-1]['name']
     elif c == "A":
-        return bible[verse.book-1]['abbrs'][0].title()
+        return verse.bible[verse.book-1]['abbrs'][0].title()
     elif c == "C":
         return str(verse.chapter)
     elif c == "V":
