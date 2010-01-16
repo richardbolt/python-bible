@@ -192,8 +192,46 @@ class Passage:
     def __unicode__(self):
         return self.smart_format()
     
+    def includes(self, verse):
+        """Check to see if a verse is included in a passage"""
+        
+        # check to see if the book is out of range
+        if verse.book < self.start.book or verse.book > self.end.book:
+            return False
+        
+        # if the verse is in the same book as the start verse
+        if verse.book == self.start.book:
+            
+            # make sure the verse is not in an earlier chapter than the start verse
+            if verse.chapter < self.start.chapter:
+                return False
+            
+            # make sure verse is not in same chapter as start verse, but before it
+            if verse.chapter == self.start.chapter and verse.verse < self.start.verse:
+                return False
+        
+        # if the verse is in the same book as the end verse
+        if verse.book == self.end.book:
+
+            # make sure the verse is not in a later chapter than the end verse
+            if verse.chapter > self.end.chapter:
+                return False
+            
+            # make sure verse is not in same chapter as end verse, but after it
+            if verse.chapter == self.end.chapter and verse.verse > self.end.verse:
+                return False
+        
+        # make sure verse is not omitted
+        if 'omissions' in self.bible[verse.book - 1]:
+            if len(self.bible[verse.book - 1]['omissions']) >= verse.chapter:
+                if verse.verse in self.bible[verse.book - 1]['omissions'][verse.chapter - 1]:
+                    return False
+        
+        # if we haven't failed out yet, then the verse is included
+        return True
+    
     def length(self):
-        """count the total number of verses in the passage"""
+        """Count the total number of verses in the passage"""
         
         # start and end are in the same book
         if self.start.book == self.end.book:
