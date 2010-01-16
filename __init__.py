@@ -186,6 +186,8 @@ class Passage:
         # make sure start and end verses are in the same translation
         if self.start.translation != self.end.translation:
             raise Exception('Verse must be in the same translation to form a Passage')
+        else:
+            self.bible = self.start.bible
     
     def __unicode__(self):
         return self.smart_format()
