@@ -145,7 +145,7 @@ class Verse:
         # return the formatted value
         return f.strip()
     
-    def to_string(self):
+    def __str__(self):
         """Casts a verse object into a normalized string
         This is especially useful for saving to a database"""
         
@@ -192,7 +192,7 @@ class Passage:
     def __unicode__(self):
         return self.smart_format()
     
-    def includes(self, verse):
+    def __contains__(self, verse):
         """Check to see if a verse is included in a passage"""
         
         # check to see if the book is out of range
@@ -230,7 +230,7 @@ class Passage:
         # if we haven't failed out yet, then the verse is included
         return True
     
-    def length(self):
+    def __len__(self):
         """Count the total number of verses in the passage"""
         
         # start and end are in the same book
@@ -277,6 +277,13 @@ class Passage:
         
         # return the count
         return count
+    
+    def __str__(self):
+        """Casts a passage object into a normalized string
+        This would be useful for saving to a database if the __init__ for this
+        class accepted the string as input - need to add that capability"""
+        
+        return str(self.start) + ' ' + str(self.end)
     
     def _count_verses(self, book, chapter, start=False, end=False):
         """counts the number of non-omitted verses in a singler chapter or range of

@@ -13,7 +13,7 @@ class VerseFormField(forms.Field):
             raise forms.ValidationError(err.__str__())
         
         # return the cleaned and processed data
-        return verse.to_string()
+        return str(verse)
 
 
 class VerseField(models.Field):
@@ -49,7 +49,7 @@ class VerseField(models.Field):
     
     def get_db_prep_value(self, value):
         # Casts dates into a string for saving to db
-        return value.to_string()
+        return str(value)
     
     def value_to_string(self, obj):
         val = self._get_val_from_obj(obj)

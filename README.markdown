@@ -29,7 +29,7 @@ Attributes
 Methods
 
 * format(format_string)  # outputs a nicely formatted string
-* to_string()  # outputs a string in b-c-v format for saving to db
+* __str__(self)  # normalized string output (for saving to database)
 
 
 Passage Object
@@ -41,10 +41,11 @@ Attributes
 
 Methods
 
-* length()  # total number of verses included in passage
 * format(format_string)  # outputs a nicely formatted string
 * smart_format()  # outputs the most common human-readable string for a passage
-* includes(verse) # checks to see if a Verse is included in the Passage
+* __len__(self)  # total number of verses included in passage
+* __str__(self)  # normalized string output (for saving to database)
+* __contains__(self, verse) # checks to see if a Verse is included in the Passage
 
 
 Installation
@@ -72,7 +73,7 @@ Using Verse Objects:
     45
     >>> v1.format('B C:V')
     Romans 1:1
-    >>> v1.to_string()
+    >>> str(v1)
     45-1-1
     
     >>> v = bible.Verse('Romans 17:1')
@@ -99,9 +100,9 @@ Using Passage Objects:
     1
     >>> p.end.verse
     8
-    >>> p.length()
+    >>> len(p)
     8
-    >>> p.includes(Verse('rom1:4'))
+    >>> Verse('rom1:4') in p
     True
     >>> p.format('B C:V to b:c:v')
     Romans 1:1 to Romans 1:8
