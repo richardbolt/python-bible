@@ -152,10 +152,10 @@ class Verse:
         # set the base string to book, chapter, and verse number
         v = "%s-%s-%s" % (str(self.book), str(self.chapter), str(self.verse))
         
-        # try to add the version to the string - if not set, just return the base string
-        try:
+        # if the translation is set, add it to the string
+        if self.translation:
             return v + '-' + str(self.translation)
-        except:
+        else:
             return v
         
 
@@ -222,10 +222,12 @@ class Passage:
                 return False
         
         # make sure verse is not omitted
-        if 'omissions' in self.bible[verse.book - 1]:
-            if len(self.bible[verse.book - 1]['omissions']) >= verse.chapter:
-                if verse.verse in self.bible[verse.book - 1]['omissions'][verse.chapter - 1]:
-                    return False
+        try:
+            omissions = self.bible[verse.book - 1]['omissions'][verse.chapter-1]
+            if omissions and verse.verse in omissions:
+                return False
+        except:
+            pass
         
         # if we haven't failed out yet, then the verse is included
         return True
@@ -238,20 +240,33 @@ class Passage:
             
             # start and end are in the same chapter of the same book
             if self.start.chapter == self.end.chapter:
-                count = self._count_verses(self.start.book, self.start.chapter, self.start.verse, self.end.verse)
+                count = self._count_verses(
+                    self.start.book,
+                    self.start.chapter,
+                    self.start.verse,
+                    self.end.verse,
+                )
             
             # start and end are in different chapters of the same book
             else:
                 
                 # get number of verses in start chapter
-                count = self._count_verses(self.start.book, self.start.chapter, start=self.start.verse)
+                count = self._count_verses(
+                    self.start.book,
+                    self.start.chapter,
+                    start=self.start.verse,
+                )
                 
                 # add number of verses in whole chapters between start and end
                 for chapter in range(self.start.chapter + 1, self.end.chapter):
                     count += self._count_verses(self.start.book, chapter)
                 
                 # add the number of verses in the end chapter
-                count += self._count_verses(self.end.book, self.end.chapter, end=self.end.verse)
+                count += self._count_verses(
+                    self.end.book,
+                    self.end.chapter,
+                    end=self.end.verse,
+                )
         
         # start and end are in different books
         else:
