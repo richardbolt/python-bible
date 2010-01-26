@@ -190,7 +190,7 @@ class Passage:
             self.bible = self.start.bible
     
     def __unicode__(self):
-        return self.smart_format()
+        return self._smart_format()
     
     def __contains__(self, verse):
         """Check to see if a verse is included in a passage"""
@@ -313,7 +313,7 @@ class Passage:
         """Return a formatted string to represent the passage
         Letters are substituted for verse attributes, like date formatting
         Lowercase letters (a, b, c, and v) refer to end verse reference
-        The letter P inserts the smart_format() string for the passage"""
+        The letter P inserts the _smart_format() string for the passage"""
         
         # if we got a string, process it and return formatted verse
         if val:
@@ -324,7 +324,7 @@ class Passage:
             # iterate over letters in val string passed in to method
             for c in val:
                 if c == "P":
-                    f += self.smart_format()
+                    f += self._smart_format()
                 elif c.isupper():
                     f += _format_char(self.start, c)
                 else:
@@ -333,11 +333,11 @@ class Passage:
             # return formatted string
             return f.strip()
         
-        # if we didn't get a formatting string, send back the smart_format()
+        # if we didn't get a formatting string, send back the _smart_format()
         else:
-            return self.smart_format()
+            return self._smart_format()
     
-    def smart_format(self):
+    def _smart_format(self):
         """Display a human-readible string for passage
         E.g. Start:  Rom. 12:1
              End:    Rom. 12:8
