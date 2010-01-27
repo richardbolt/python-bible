@@ -1,0 +1,66 @@
+Genesis, gen
+Exodus, exo, exod
+Leviticus, lev
+Numbers, num
+Deuteronomy, deut
+Joshua, josh
+Judges
+Ruth
+I Samuel, 1 Samuel, The First Book of Samuel
+II Samuel, 2 Samuel, The Second Book of Samuel
+I Kings, 1 Kings, The First Book of Kings
+II Kings, 2 Kings, The Second Book of Kings
+I Chronicles, 1 Chronicles, The First Book of Chronicles
+II Chronicles, 2 Chronicles, The Second Book of Chronicles
+Ezra
+Nehemiah, neh
+Esther, esth, est
+Job
+The Psalms, psalms
+Proverbs, prov
+Ecclesiastes, ecc
+Song of Solomon, song
+Isaiah
+Jeremiah
+Lamentations, lam
+Ezekiel
+Daniel
+Hosea
+Joel
+Amos
+Obadiah
+Jonah
+Micah
+Nahum
+Habakkuk
+Zephaniah
+Haggai
+Zechariah
+Malachi, mal
+Matthew, The Good News According to Matthew
+Mark, The Good News According to Mark
+Luke, The Good News According to Luke
+John, The Good News According to John
+Acts, The Acts of the Apostles
+Romans, Paul's Letter to the Romans
+I Corinthians, 1 Corinthians, Paul's First Letter to the Corinthians
+II Corinthians, 2 Corinthians, Paul's Second Letter to the Corinthians
+Galations, Paul's Letter to the Galatians
+Ephesians, Paul's Letter to the Ephesians
+Philippians, Paul's Letter to the Philippians
+Colossians, Paul's Letter to the Colossians
+I Thessalonians, 1 Thessalonians, Paul's First Letter to the Thessalonians
+II Thessalonians, 2 Thessalonians, Paul's Second Letter to the Thessalonians
+I Timothy, 1 Timothy, Paul's First Letter to Timothy
+II Timothy, 2 Timothy, Paul's Second Letter to Timothy
+Titus, Paul's Letter to Titus
+Philemon, Paul's Letter to Philemon
+Hebrews, The Letter to the Hebrews
+James, The Letter from James
+I Peter, 1 Peter, Peter's First Letter
+II Peter, 2 Peter, Peter's Second Letter
+I John, 1 John, John's First Letter
+II John, 2 John, John's Second Letter
+III John, 3 John, John's Third Letter
+Jude, The Letter from Jude
+Revelation, The Revelation to John
