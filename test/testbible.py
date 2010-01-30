@@ -1,3 +1,29 @@
+from vfilter import BookMatcher
+
+def build_bibleinfo():
+    global bibledef
+
+    with open('books.txt') as f:
+        matcher = BookMatcher.fromfile(f)
+
+    book_ids = set()
+
+    num_books = len(bibledef)
+    bibleinfo = num_books*[None]
+    for title in bibledef:
+        id_book = matcher.match(title)
+        book_ids.add(id_book)
+
+        num_chapters = len(bibledef[title])
+        bibleinfo[id_book] = num_chapters * [None]
+        for id_chapter in xrange(0, num_chapters):
+            num_verses = bibledef[title][id_chapter + 1]
+            bibleinfo[id_book][id_chapter] = num_verses
+
+    tuple_bibleinfo = tuple(tuple(chapter_info for chapter_info in book_info) for book_info in bibleinfo)
+    return tuple_bibleinfo
+
+
 bibledef = {
  'Amos': {1: 15, 2: 16, 3: 15, 4: 13, 5: 27, 6: 14, 7: 17, 8: 14, 9: 15},
  'Daniel': {1: 21,

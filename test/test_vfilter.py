@@ -19,30 +19,7 @@ from vfilter import _fix_verse_range
 from vfilter import _rectify_passage
 from vfilter import _verse_partial_cmp
 from testbible import bibledef
-
-
-def build_bibleinfo():
-    global bibledef
-
-    with open('books.txt') as f:
-        matcher = BookMatcher.fromfile(f)
-
-    book_ids = set()
-
-    num_books = len(bibledef)
-    bibleinfo = num_books*[None]
-    for title in bibledef:
-        id_book = matcher.match(title)
-        book_ids.add(id_book)
-
-        num_chapters = len(bibledef[title])
-        bibleinfo[id_book] = num_chapters * [None]
-        for id_chapter in xrange(0, num_chapters):
-            num_verses = bibledef[title][id_chapter + 1]
-            bibleinfo[id_book][id_chapter] = num_verses
-
-    tuple_bibleinfo = tuple(tuple(chapter_info for chapter_info in book_info) for book_info in bibleinfo)
-    return tuple_bibleinfo
+from testbible import build_bibleinfo
 
 
 class TestBookFilter(unittest.TestCase):
