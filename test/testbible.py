@@ -29,8 +29,9 @@ from vfilter import BookMatcher
 def build_bibleinfo():
     global bibledef
 
-    with open('books.txt') as f:
-        matcher = BookMatcher.fromfile(f)
+    f = open('books.txt')
+    matcher = BookMatcher.fromfile(f)
+    f.close()
 
     book_ids = set()
 

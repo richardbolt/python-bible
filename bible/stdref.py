@@ -33,6 +33,83 @@ from vfilter import PPassageFilter
 from vfilter import PPassageRectifier
 from vfilter import VFilterToken
 
+from testbible import build_bibleinfo
+
+class BibleRef(object):
+    def __init__(self, bibleinfo, formatter):
+        self._bibleinfo = bibleinfo
+        self._formatter = formatter
+
+    @property
+    def formatter(self):
+        return self._formatter
+
+    @property
+    def bibleinfo(self):
+        return self._bibleinfo
+
+    def __str__(self):
+        return self.formatter.format(self)
+
+    def __repr__(self):
+        return str(self)
+
+
+class Passage(BibleRef):
+    def __init__(self, spans, bibleinfo, formatter):
+        BibleRef.__init__(self, bibleinfo, formatter)
+        self._spans = tuple(spans)
+
+    @property
+    def spans(self):
+        return self._spans
+
+
+class VerseSpan(BibleRef):
+    def __calc_len(self):
+        return 5
+        #for book in xrange(self._first.book, self._last.book + 1):
+
+
+    def __init__(self, first, last, bibleinfo, formatter):
+        BibleRef.__init__(self, bibleinfo, formatter)
+        self._first = first
+        self._last = last
+        self.__len = self.__calc_len()
+
+    @property
+    def first(self):
+        return self._first
+
+    @property
+    def last(self):
+        return self._last
+
+    def __len__(self):
+        return self.__len
+
+
+class Verse(BibleRef):
+    def __init__(self, book, chapter, verse, bibleinfo, formatter):
+        BibleRef.__init__(self, bibleinfo, formatter)
+
+        self._book = book
+        self._chapter = chapter
+        self._verse = verse
+
+
+    @property
+    def book(self):
+        return self._book
+
+    @property
+    def chapter(self):
+        return self._chapter
+
+    @property
+    def verse(self):
+        return self._verse
+
 
 class PassageFormatter(object):
     def __init__(self, titles):
@@ -72,7 +149,7 @@ class PassageFormatter(object):
         if hasattr(passage_span_or_verse, 'spans'):
             return self._format_passage(passage_span_or_verse)
         elif hasattr(passage_span_or_verse, 'first') and hasattr(passage_span_or_verse, 'last'):
-            return self._format_passage(passage_span_or_verse)
+            return self._format_span(passage_span_or_verse)
         elif hasattr(passage_span_or_verse, 'book') and hasattr(passage_span_or_verse, 'chapter') and hasattr(passage_span_or_verse, 'verse'):
             return self._format_verse(passage_span_or_verse)
         else:
@@ -97,7 +174,7 @@ def match(string, matcher, bibleinfo):
         if t.type == VFilterToken.PASSAGE:
             passage_token = t
         else:
-            raise ValueError('Is not a token!')
+            raise ValueError('Is not a passage token!')
 
     return passage_token
 
@@ -110,3 +187,138 @@ def search(string, matcher, bibleinfo):
             yield t
     else:
         raise StopIteration()
+
+
+class BibleModel(object):
+    def __init__(self):
+        f = open('books.txt')
+        self._matcher = BookMatcher.fromfile(f)
+        f.close()
+
+        self._bibleinfo = build_bibleinfo()
+
+        f = open('books.txt')
+        self._formatter = PassageFormatter.fromfile(f)
+        f.close()
+
+    def Passage(self, reference_or_spans):
+        if type(reference_or_spans) is str:
+            t = self.match(reference_or_spans)
+            p = Passage(t.value, self.bibleinfo, self.formatter)
+        else:
+            p = Passage(reference_or_spans, self.bibleinfo, self.formatter)
+
+        return p
+
+    def Span(self, reference_or_first, last = None):
+        if type(reference_or_first) is str:
+            if last is not None:
+                raise TypeError('When type(reference_or_first) is str, last must be None; Found {0}'.format(type(last)))
+            t = self.match(reference_or_first)
+            p = t.value
+            if len(p.spans) == 1:
+                s = VerseSpan(p.spans[0].first, p.spans[0].last, self.bibleinfo, self.formatter)
+            else:
+                raise ValueError('{0} is not a span.'.format(repr(reference_or_first)))
+        elif type(reference_or_first) is Verse and type(last) is Verse:
+            first = reference_or_first
+            s = VerseSpan(first, last, self.bibleinfo, self.formatter)
+        else:
+            raise TypeError('When type(reference_or_first) is str, type(last) should be None; When type(reference_or_first) is Verse, type(last) should also be Verse.  Found instead {0}, {1}'.format(type(reference_or_first), type(last)))
+
+        return s
+
+
+    def Verse(self, reference_or_book, chapter = None, verse = None):
+        if type(reference_or_book) is str and chapter is None and verse is None:
+            t = self.match(reference_or_book)
+            p = t.value
+            if len(p.spans) == 1 and p.spans[0].first == p.spans[0].last:
+                v = Verse(p.spans[0].first.book, p.spans[0].first.chapter, p.spans[0].first.verse, self.bibleinfo, self.formatter)
+            else:
+                raise ValueError('{0} is not a verse.'.format(repr(reference_or_book)))
+        elif type(reference_or_book) is int and type(chapter) is int and type(verse) is int:
+            book = reference_or_book
+            v = Verse(book, chapter, verse, self.bibleinfo, self.formatter)
+        elif type(reference_or_book) is str and type(chapter) is int and type(verse) is int:
+            book = self._matcher.match(reference_or_book)
+            if book is None:
+                raise ValueError('{0} could not be recognized as a book.'.format(repr(reference_or_book)))
+            else:
+                v = Verse(book, chapter, verse, self.bibleinfo, self.formatter)
+        elif type(reference_or_book) is not str and type(reference_or_book) is not int:
+            raise TypeError('type(reference_or_book) should be int or str; Found {0}'.format(type(reference_or_book)))
+        elif type(reference_or_book) is str and type(chapter) is not None:
+            raise TypeError('When type(reference_or_book) is str, type(chapter) should be None; Found {0}'.format(type(chapter)))
+        elif type(reference_or_book) is str and type(verse) is not None:
+            raise TypeError('When type(reference_or_book) is str, type(chapter) should be None; Found {0}'.format(type(chapter)))
+        elif type(reference_or_book) is int and type(chapter) is not int:
+            raise TypeError('When type(reference_or_book) is int, type(chapter) should be int.  Found {0}'.format(type(chapter)))
+        elif type(reference_or_book) is int and type(verse) is not int:
+            raise TypeError('When type(reference_or_book) is int, type(chapter) should be int.  Found {0}'.format(type(chapter)))
+        else:
+            assert False
+
+        return v
+
+    def match(self, string):
+        passage = match(string, self._matcher, self._bibleinfo)
+        return passage
+
+    def search(self, string):
+        for p in search(string, self._matcher, self._bibleinfo):
+            yield p
+
+    def tokens(self, string):
+        for t in tokenizer(string, self._matcher, self._bibleinfo):
+            yield t
+
+    def format(self, string):
+        return self.formatter.format(string)
+
+    @property
+    def books(self):
+        return self._books
+
+    @property
+    def bibleinfo(self):
+        return self._bibleinfo
+
+    @property
+    def formatter(self):
+        return self._formatter
+
+
+class verse_it(object):
+    def __init__(self, ref):
+        pass
+
+
+    def next(self):
+        pass
+
+
+    def __iter__(self):
+        pass
+
+
+class chapter_it(object):
+    def __init__(self, ref):
+        pass
+
+    def next(self):
+        pass
+
+    def __iter__(self):
+        pass
+
+
+class book_it(object):
+    def __init__(self, ref):
+        pass
+
+    def next(self):
+        pass
+
+    def __iter__(self):
+        pass

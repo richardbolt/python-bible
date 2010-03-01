@@ -50,8 +50,9 @@ from testbible import build_bibleinfo
 
 class TestBookFilter(unittest.TestCase):
     def setUp(self):
-        with open('books.txt') as f:
-            self.matcher = BookMatcher.fromfile(f)
+        f = open('books.txt')
+        self.matcher = BookMatcher.fromfile(f)
+        f.close()
 
 
     def tokenStream(self, string):
@@ -72,8 +73,9 @@ class TestBookFilter(unittest.TestCase):
 
 class TestBookMatcher(unittest.TestCase):
     def setUp(self):
-        with open('books.txt') as f:
-            self.matcher = BookMatcher.fromfile(f)
+        f = open('books.txt')
+        self.matcher = BookMatcher.fromfile(f)
+        f.close
 
     def tearDown(self):
         pass
@@ -88,8 +90,9 @@ class TestBookMatcher(unittest.TestCase):
 
 class TestPVerseFilter(unittest.TestCase):
     def _tokenStream(self, string):
-        with open('books.txt') as f:
-            matcher = BookMatcher.fromfile(f)
+        f = open('books.txt')
+        matcher = BookMatcher.fromfile(f)
+        f.close()
 
         return PVerseFilter(BookFilter(WhitespaceFilter(Tokenizer(string)), matcher))
 
@@ -108,8 +111,9 @@ class TestPVerseFilter(unittest.TestCase):
 
 class TestPVerseSpanFilter(unittest.TestCase):
     def _tokenStream(self, string):
-        with open('books.txt') as f:
-            matcher = BookMatcher.fromfile(f)
+        f = open('books.txt')
+        matcher = BookMatcher.fromfile(f)
+        f.close()
 
         return PVerseSpanFilter(BookFilter(WhitespaceFilter(Tokenizer(string)), matcher))
 
@@ -130,8 +134,9 @@ class TestPVerseSpanFilter(unittest.TestCase):
 
 class TestPPassageFilter(unittest.TestCase):
     def _tokenStream(self, string):
-        with open('books.txt') as f:
-            matcher = BookMatcher.fromfile(f)
+        f = open('books.txt')
+        matcher = BookMatcher.fromfile(f)
+        f.close()
 
         return PPassageFilter(BookFilter(tokenizer.WhitespaceFilter(Tokenizer(string)), matcher))
 
@@ -390,8 +395,9 @@ class TestPPassageRectifier(unittest.TestCase):
 
 
     def _tokenStream(self, string):
-        with open('books.txt') as f:
-            matcher = BookMatcher.fromfile(f)
+        f = open('books.txt')
+        matcher = BookMatcher.fromfile(f)
+        f.close()
 
         return PPassageFilter(BookFilter(tokenizer.WhitespaceFilter(Tokenizer(string)), matcher))
 

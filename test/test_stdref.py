@@ -33,17 +33,20 @@ from vfilter import PPassage
 from stdref import PassageFormatter
 from stdref import match
 from stdref import search
+from stdref import BibleModel
 
 from testbible import bibledef
 from testbible import build_bibleinfo
 
 BIBLEINFO = build_bibleinfo()
 
-with open('books.txt') as f:
-    MATCHER = BookMatcher.fromfile(f)
+f = open('books.txt')
+MATCHER = BookMatcher.fromfile(f)
+f.close()
 
-with open('books.txt') as f:
-    formatter = PassageFormatter.fromfile(f)
+f = open('books.txt')
+FORMATTER = PassageFormatter.fromfile(f)
+f.close()
 
 class TestBookFilter(unittest.TestCase):
     def test_match(self):
@@ -59,14 +62,84 @@ class TestBookFilter(unittest.TestCase):
         self.assertEquals(tokens[0].value, PPassage([PVerseSpan(PVerse(0, 3, 1), PVerse(0, 16, 16))]))
         self.assertEquals(tokens[1].value, PPassage([PVerseSpan(PVerse(1, 1, 5), PVerse(1, 1, 10))]))
 
-def example_usage():
-    string = "Glory, I'm back home Genesis 16:32 - Genesis 3\n in Exodus 1:10 - Exodus 1:5 Canada"
-    print string
-    print 32*'v'
-    tokens = list(search(string, MATCHER, BIBLEINFO))
 
-    for t in tokens:
-        print t.row, t.col, string[t.start:t.end], '=>', formatter.format(t.value)
+class TestBibleModel(unittest.TestCase):
+    def setUp(self):
+        self.model = BibleModel()
+
+    def test_books(self):
+        for b in self.model.books:
+            print b
+
+    def test_bibleinfo(self):
+        self.assertTrue(self.model.bibleinfo)
+
+
+    def test_formatter(self):
+        self.assertTrue(self.model.formatter)
+
+
+    def test_match(self):
+        t = self.model.match('Genesis 4:12')
+        v = PVerse(0, 4, 12)
+        self.assertEquals(t.value, PPassage([PVerseSpan(v, v)]))
+
+
+    def test_search(self):
+        string = "Glory, I'm back home Genesis 16:32 - Genesis 3\n in Exodus 1:10 - Exodus 1:5 Canada"
+        tokens = list(self.model.search(string))
+
+        self.assertEquals(len(tokens), 2)
+        self.assertEquals(tokens[0].value, PPassage([PVerseSpan(PVerse(0, 3, 1), PVerse(0, 16, 16))]))
+        self.assertEquals(tokens[1].value, PPassage([PVerseSpan(PVerse(1, 1, 5), PVerse(1, 1, 10))]))
+
+
+    def test_format(self):
+        v = PVerse(0, 4, 12)
+        self.assertEquals(self.model.format(v), 'Genesis 4:12')
+
+        p = PPassage([PVerseSpan(PVerse(0, 3, 1), PVerse(0, 16, 16))])
+        self.assertEquals(self.model.format(p), 'Genesis 3:1 - 16:16')
+
+
+    def test_passage(self):
+        p = self.model.Passage('Gen 5:12 - Gen 1:1')
+        self.assertEquals(str(p), 'Genesis 1:1 - 5:12')
+
+        p = self.model.Passage((self.model.Span('Gen - Exo'), self.model.Span('Exo - Lev')))
+        self.assertEquals(str(p), 'Genesis - Leviticus')
+
+
+    def test_span(self):
+        s = self.model.Span('Genesis 1:1')
+        self.assertEquals(str(s), 'Genesis 1:1')
+
+        s = self.model.Span('Genesis 1:1-10')
+        self.assertEquals(str(s), 'Genesis 1:1 - 10')
+
+        s = self.model.Span(self.model.Verse(1,1,1), self.model.Verse(1, 2, 10))
+        self.assertEquals(str(s), 'Exodus 1:1 - 2:10')
+
+        self.assertRaises(TypeError, self.model.Span, 'Ex', 5)
+        self.assertRaises(TypeError, self.model.Span, 'Ex', 'ex')
+        self.assertRaises(ValueError, self.model.Span, 'Easdfasdfx')
+
+
+    def test_verse(self):
+        v = self.model.Verse(0, 1, 1)
+        self.assertEquals(str(v), 'Genesis 1:1')
+
+        v = self.model.Verse('Gen 5:12')
+        self.assertEquals(str(v), 'Genesis 5:12')
+
+        v = self.model.Verse('Gen', 5, 12)
+        self.assertEquals(str(v), 'Genesis 5:12')
+
+        self.assertRaises(TypeError, self.model.Verse, 0)
+        self.assertRaises(TypeError, self.model.Verse, 0, 0)
+        self.assertRaises(ValueError, self.model.Verse, 'hello')
+        self.assertRaises(TypeError, self.model.Verse, 'hello', 0)
+        self.assertRaises(ValueError, self.model.Verse, 'hello', 0, 0)
 
 
 if __name__ == '__main__':
