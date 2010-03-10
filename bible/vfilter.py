@@ -537,17 +537,14 @@ def _nextverse(v1, bibleinfo):
     chapter = v1.chapter
     verse = v1.verse
 
-    if verse >= bibleinfo[book][chapter - 1]:
-        if chapter >= bibleinfo[book]:
-            if book >= len(bibleinfo):
-                # At last verse in bible!
-                raise ValueError('Last verse in bible; no succeeding verse!')
-            else:
-                return PVerse(book + 1, 1, 1)
-        else:
-            return PVerse(book, chapter + 1, 1)
-    else:
+    if verse < bibleinfo[book][chapter - 1]:
         return PVerse(book, chapter, verse + 1)
+    elif chapter < len(bibleinfo[book]):
+        return PVerse(book, chapter + 1, 1)
+    elif book < len(bibleinfo) - 1:
+        return PVerse(book + 1, 1, 1)
+    else:
+        raise ValueError('Last verse in bible; no succeeding verse!')
 
 
 def _fusespans(s1, s2, bibleinfo):

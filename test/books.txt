@@ -1,66 +1,66 @@
-Genesis, gen
+Genesis, Gen, gn
 Exodus, exo, exod
-Leviticus, lev
+Leviticus, lev, levit
 Numbers, num
-Deuteronomy, deut
-Joshua, josh
-Judges
-Ruth
-I Samuel, 1 Samuel, The First Book of Samuel
-II Samuel, 2 Samuel, The Second Book of Samuel
-I Kings, 1 Kings, The First Book of Kings
-II Kings, 2 Kings, The Second Book of Kings
-I Chronicles, 1 Chronicles, The First Book of Chronicles
-II Chronicles, 2 Chronicles, The Second Book of Chronicles
-Ezra
+Deuteronomy, deu, deut
+Joshua, josh, jos
+Judges, judge
+Ruth, ru
+The First Book of Samuel, i samuel, 1 samuel, 1sam
+The Second Book of Samuel, ii samuel, 2 samuel, 2sam
+The First Book of Kings, i kings, 1 kings, iking, 1king
+The Second Book of Kings, ii kings, 2 kings, iiking, 2king
+The First Book of Chronicles, i chronicles, 1 chronicles, 1chron
+The Second Book of Chronicles, ii chronicles, 2 chronicles, 2chron
+Ezra, ez
 Nehemiah, neh
-Esther, esth, est
-Job
-The Psalms, psalms
-Proverbs, prov
+Esther, est
+Job, jb
+The Psalms, psalms, psalm
+Proverbs, prov, pro
 Ecclesiastes, ecc
-Song of Solomon, song
-Isaiah
-Jeremiah
+Song of Solomon, song, ss
+Isaiah, isa
+Jeremiah, jer
 Lamentations, lam
-Ezekiel
-Daniel
-Hosea
-Joel
-Amos
-Obadiah
-Jonah
-Micah
-Nahum
-Habakkuk
-Zephaniah
-Haggai
-Zechariah
+Ezekiel, eze
+Daniel, dan
+Hosea, hos
+Joel, joe
+Amos, amo
+Obadiah, obad, oba
+Jonah, jon
+Micah, mic
+Nahum, nah
+Habakkuk, hab
+Zephaniah, zeph, zep
+Haggai, hag
+Zechariah, zech, zec
 Malachi, mal
-Matthew, The Good News According to Matthew
-Mark, The Good News According to Mark
-Luke, The Good News According to Luke
-John, The Good News According to John
-Acts, The Acts of the Apostles
-Romans, Paul's Letter to the Romans
-I Corinthians, 1 Corinthians, Paul's First Letter to the Corinthians
-II Corinthians, 2 Corinthians, Paul's Second Letter to the Corinthians
-Galations, Paul's Letter to the Galatians
-Ephesians, Paul's Letter to the Ephesians
-Philippians, Paul's Letter to the Philippians
-Colossians, Paul's Letter to the Colossians
-I Thessalonians, 1 Thessalonians, Paul's First Letter to the Thessalonians
-II Thessalonians, 2 Thessalonians, Paul's Second Letter to the Thessalonians
-I Timothy, 1 Timothy, Paul's First Letter to Timothy
-II Timothy, 2 Timothy, Paul's Second Letter to Timothy
-Titus, Paul's Letter to Titus
-Philemon, Paul's Letter to Philemon
-Hebrews, The Letter to the Hebrews
-James, The Letter from James
-I Peter, 1 Peter, Peter's First Letter
-II Peter, 2 Peter, Peter's Second Letter
-I John, 1 John, John's First Letter
-II John, 2 John, John's Second Letter
-III John, 3 John, John's Third Letter
-Jude, The Letter from Jude
-Revelation, The Revelation to John
+The Good News According to Matthew, Matthew, matt
+The Good News According to Mark, Mark
+The Good News According to Luke, Luke
+The Good News According to John, John
+The Acts of the Apostles, Acts, act
+Paul's Letter to the Romans, Romans, rom
+Paul's First Letter to the Corinthians, i corinthians, 1 corinthians, icor, 1cor
+Paul's Second Letter to the Corinthians, ii corinthians, 2 corinthians, iicor, 2cor
+Paul's Letter to the Galatians, Galatians, gal
+Paul's Letter to the Ephesians, ephesians, eph
+Paul's Letter to the Philippians, philippians, philip
+Paul's Letter to the Colossians, Colossians, col
+Paul's First Letter to the Thessalonians, i Thessalonians, 1 thessalonians, ithess, 1thess
+Paul's Second Letter to the Thessalonians, ii Thessalonians, 2 thessalonians, iithess, 2thess
+Paul's First Letter to Timothy, i timothy, 1 timothy, itim, 1tim
+Paul's Second Letter to Timothy, ii timothy, 2 timothy, iitim, 2tim
+Paul's Letter to Titus, titus, tit
+Paul's Letter to Philemon, philemon, phil
+The Letter to the Hebrews, hebrews, heb
+The Letter from James, james
+Peter's First Letter, i peter, 1 peter, ipet, 1pet
+Peter's Second Letter, ii peter, 2 peter, iipet, 2pet
+John's First Letter, i john, 1 john, ijhn, 1jhn
+John's Second Letter, ii john, 2 john, iijhn, 2jhn
+John's Third Letter, iii john, 3 john, iiijhn, 3jhn
+The Letter from Jude, jude
+The Revelation to John, revelation, revelations, rev, rv

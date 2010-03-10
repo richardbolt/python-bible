@@ -44,8 +44,30 @@ from vfilter import VFilterToken
 from vfilter import _fix_verse_range
 from vfilter import _rectify_passage
 from vfilter import _verse_partial_cmp
+from vfilter import _isnextverse
+from vfilter import _nextverse
 from testbible import bibledef
 from testbible import build_bibleinfo
+
+
+SIXBIBLEINFO = (
+    (1,),
+    (1, 2),
+    (1, 2, 3),
+    (1, 2, 3, 4),
+    (1, 2, 3, 4, 5),
+    (1, 2, 3, 4, 5, 6)
+)
+
+TITLES = (
+    ('one',),
+    ('two',),
+    ('three',),
+    ('four',),
+    ('five',),
+    ('six',),
+)
+
 
 
 class TestBookFilter(unittest.TestCase):
@@ -272,6 +294,8 @@ class TestSpanFusing(unittest.TestCase):
 
         self.bibleinfo = build_bibleinfo()
 
+        self.sixbibleinfo = SIXBIBLEINFO
+
     def test_fusespans_a(self):
         s1 = PVerseSpan(PVerse(0, 1, 1), PVerse(0, 1, 10))
         s2 = PVerseSpan(PVerse(0, 1, 12), PVerse(0, 1, 13))
@@ -367,6 +391,13 @@ class TestSpanFusing(unittest.TestCase):
         self.assertRaises(ValueError, _fusespans, s1, s2, self.bibleinfo)
 
 
+    def test_bookboundary_fusing(self):
+        s1 = PVerseSpan(PVerse(0, 1, 1), PVerse(0, 1, 1))
+        s2 = PVerseSpan(PVerse(1, 1, 1), PVerse(1, 2, 1))
+        expected = PVerseSpan(PVerse(0, 1, 1), PVerse(1, 2, 1))
+        self.assertEquals(_fusespans(s1, s2, self.sixbibleinfo), expected)
+
+
     def test_fusespanlist(self):
         spans = [
             PVerseSpan(PVerse(0, 1, 1), PVerse(0, 1, 10)),
@@ -386,12 +417,35 @@ class TestSpanFusing(unittest.TestCase):
         ]
         self.assertEquals(_fusespanlist(spans, self.bibleinfo), expected)
 
+        spans = [
+            PVerseSpan(PVerse(3, 1, 1), PVerse(5, 6, 6)),
+            PVerseSpan(PVerse(0, 1, 1), PVerse(2, 3, 3)),
+        ]
+        expected = [
+            PVerseSpan(PVerse(0, 1, 1), PVerse(5, 6, 6)),
+        ]
+        self.assertEquals(_fusespanlist(spans, self.sixbibleinfo), expected)
+
+
+    def test_isnextverse(self):
+        v1 = PVerse(0, 1, 1)
+        v2 = PVerse(1, 1, 1)
+        self.assertTrue(_isnextverse(v1, self.sixbibleinfo))
+        self.assertEquals(_nextverse(v1, self.sixbibleinfo), v2)
+
+
 
 class TestPPassageRectifier(unittest.TestCase):
     def __init__(self, *args, **keywords):
         super(type(self), self).__init__(*args, **keywords)
 
         self.bibleinfo = build_bibleinfo()
+        self.sixbibleinfo = SIXBIBLEINFO
+
+
+    def _tokenStream6(self, string):
+        matcher = BookMatcher(TITLES)
+        return PPassageFilter(BookFilter(tokenizer.WhitespaceFilter(Tokenizer(string)), matcher))
 
 
     def _tokenStream(self, string):
@@ -401,17 +455,39 @@ class TestPPassageRectifier(unittest.TestCase):
 
         return PPassageFilter(BookFilter(tokenizer.WhitespaceFilter(Tokenizer(string)), matcher))
 
+    def _rectifiedStream6(self, string):
+        return PPassageRectifier(self._tokenStream6(string), self.sixbibleinfo)
+
+
     def _rectifiedStream(self, string):
         return PPassageRectifier(self._tokenStream(string), self.bibleinfo)
-
 
     def test_reordering(self):
         tokens = list(self._rectifiedStream('Exodus, Genesis'))
         self.assertEquals(len(tokens), 1)
         passage = tokens[0].value
-        self.assertEquals(len(passage), 2)
-        self.assertEquals(passage.spans[0], PVerseSpan(PVerse(0, 1, 1), PVerse(0, 34, 19)))
-        self.assertEquals(passage.spans[1], PVerseSpan(PVerse(1, 1, 1), PVerse(1, 35, 1)))
+        self.assertEquals(len(passage), 1)
+        self.assertEquals(passage.spans[0], PVerseSpan(PVerse(0, 1, 1), PVerse(1, 35, 1)))
+
+
+    def test_bookfusing(self):
+        tokens = list(self._rectifiedStream6('one, two'))
+        self.assertEquals(len(tokens), 1)
+        passage = tokens[0].value
+        self.assertEquals(len(passage), 1)
+        self.assertEquals(passage.spans[0], PVerseSpan(PVerse(0, 1, 1), PVerse(1, 2, 2)))
+
+        tokens = list(self._rectifiedStream6('one 1:1 - three 3:3, four 1:1 - six 6:6'))
+        self.assertEquals(len(tokens), 1)
+        passage = tokens[0].value
+        self.assertEquals(len(passage), 1)
+        self.assertEquals(passage.spans[0], PVerseSpan(PVerse(0, 1, 1), PVerse(5, 6, 6)))
+
+        tokens = list(self._rectifiedStream6('one - three, four - six'))
+        self.assertEquals(len(tokens), 1)
+        passage = tokens[0].value
+        self.assertEquals(len(passage), 1)
+        self.assertEquals(passage.spans[0], PVerseSpan(PVerse(0, 1, 1), PVerse(5, 6, 6)))
 
 
     def test_fusing(self):

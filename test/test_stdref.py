@@ -34,6 +34,7 @@ from stdref import PassageFormatter
 from stdref import match
 from stdref import search
 from stdref import BibleModel
+from stdref import verse_iter
 
 from testbible import bibledef
 from testbible import build_bibleinfo
@@ -65,11 +66,31 @@ class TestBookFilter(unittest.TestCase):
 
 class TestBibleModel(unittest.TestCase):
     def setUp(self):
-        self.model = BibleModel()
+        akas = (
+            ('one',),
+            ('two',),
+            ('three',),
+            ('four',),
+            ('five',),
+            ('six',),
+        )
 
-    def test_books(self):
-        for b in self.model.books:
-            print b
+        matcher = BookMatcher(akas)
+
+        titles = [aka[0] for aka in akas]
+
+        formatter = PassageFormatter(titles)
+
+        bibleinfo = (
+            (1,),
+            (1, 2),
+            (1, 2, 3),
+            (1, 2, 3, 4),
+            (1, 2, 3, 4, 5),
+            (1, 2, 3, 4, 5, 6)
+        )
+
+        self.model = BibleModel(bibleinfo, matcher, formatter)
 
     def test_bibleinfo(self):
         self.assertTrue(self.model.bibleinfo)
@@ -80,45 +101,52 @@ class TestBibleModel(unittest.TestCase):
 
 
     def test_match(self):
-        t = self.model.match('Genesis 4:12')
-        v = PVerse(0, 4, 12)
+        t = self.model.match('five 3:2')
+        v = PVerse(4, 3, 2)
         self.assertEquals(t.value, PPassage([PVerseSpan(v, v)]))
 
 
     def test_search(self):
-        string = "Glory, I'm back home Genesis 16:32 - Genesis 3\n in Exodus 1:10 - Exodus 1:5 Canada"
+        string = "Glory, I'm back home one 16:32 - three 3\n in four 2:1 - five 5:4 Canada"
         tokens = list(self.model.search(string))
 
         self.assertEquals(len(tokens), 2)
-        self.assertEquals(tokens[0].value, PPassage([PVerseSpan(PVerse(0, 3, 1), PVerse(0, 16, 16))]))
-        self.assertEquals(tokens[1].value, PPassage([PVerseSpan(PVerse(1, 1, 5), PVerse(1, 1, 10))]))
+        self.assertEquals(tokens[0].value, PPassage([PVerseSpan(PVerse(0, 1, 1), PVerse(2, 3, 3))]))
+        self.assertEquals(tokens[1].value, PPassage([PVerseSpan(PVerse(3, 2, 1), PVerse(4, 5, 4))]))
 
 
     def test_format(self):
         v = PVerse(0, 4, 12)
-        self.assertEquals(self.model.format(v), 'Genesis 4:12')
+        self.assertEquals(self.model.format(v), 'one 4:12')
 
         p = PPassage([PVerseSpan(PVerse(0, 3, 1), PVerse(0, 16, 16))])
-        self.assertEquals(self.model.format(p), 'Genesis 3:1 - 16:16')
+        self.assertEquals(self.model.format(p), 'one 3:1 - 16:16')
 
 
     def test_passage(self):
-        p = self.model.Passage('Gen 5:12 - Gen 1:1')
-        self.assertEquals(str(p), 'Genesis 1:1 - 5:12')
+        self.assertRaises(ValueError, self.model.Passage, 'flugelhorn')
 
-        p = self.model.Passage((self.model.Span('Gen - Exo'), self.model.Span('Exo - Lev')))
-        self.assertEquals(str(p), 'Genesis - Leviticus')
+        s = 'one 1:1 - four 3:1'
+        p = self.model.Passage(s)
+        self.assertEquals(str(p), s)
+
+        p = self.model.Passage('one - three, four - six')
+        self.assertEquals(str(p), 'one - six')
+
+        p = self.model.Passage((self.model.Span('one - three'), self.model.Span('four - six')))
+        self.assertEquals(str(p), 'one - six')
 
 
     def test_span(self):
-        s = self.model.Span('Genesis 1:1')
-        self.assertEquals(str(s), 'Genesis 1:1')
+        self.assertRaises(ValueError, self.model.Span, 'flugelhorn')
+        s = self.model.Span('one 1:1')
+        self.assertEquals(str(s), 'one')
 
-        s = self.model.Span('Genesis 1:1-10')
-        self.assertEquals(str(s), 'Genesis 1:1 - 10')
+        s = self.model.Span('six 1:1-10')
+        self.assertEquals(str(s), 'six 1:1')
 
-        s = self.model.Span(self.model.Verse(1,1,1), self.model.Verse(1, 2, 10))
-        self.assertEquals(str(s), 'Exodus 1:1 - 2:10')
+        s = self.model.Span(self.model.Verse(1,1,1), self.model.Verse(2, 2, 2))
+        self.assertEquals(str(s), 'two 1:1 - three 2:2')
 
         self.assertRaises(TypeError, self.model.Span, 'Ex', 5)
         self.assertRaises(TypeError, self.model.Span, 'Ex', 'ex')
@@ -127,19 +155,74 @@ class TestBibleModel(unittest.TestCase):
 
     def test_verse(self):
         v = self.model.Verse(0, 1, 1)
-        self.assertEquals(str(v), 'Genesis 1:1')
+        self.assertEquals(str(v), 'one 1:1')
 
-        v = self.model.Verse('Gen 5:12')
-        self.assertEquals(str(v), 'Genesis 5:12')
+        v = self.model.Verse('two 2:6')
+        self.assertEquals(str(v), 'two 2:2')
 
-        v = self.model.Verse('Gen', 5, 12)
-        self.assertEquals(str(v), 'Genesis 5:12')
+        v = self.model.Verse('three', 3, 3)
+        self.assertEquals(str(v), 'three 3:3')
 
         self.assertRaises(TypeError, self.model.Verse, 0)
         self.assertRaises(TypeError, self.model.Verse, 0, 0)
         self.assertRaises(ValueError, self.model.Verse, 'hello')
         self.assertRaises(TypeError, self.model.Verse, 'hello', 0)
         self.assertRaises(ValueError, self.model.Verse, 'hello', 0, 0)
+        self.assertRaises(ValueError, self.model.Verse, 0, 1, 0)
+        self.assertRaises(ValueError, self.model.Verse, 0, 0, 1)
+
+
+    def test_book(self):
+        for book_idx in xrange(0, len(self.model.bibleinfo)):
+            b = self.model.Book(book_idx)
+            s = self.model.Span(self.model.Verse(book_idx, 1, 1), self.model.Verse(book_idx, len(self.model.bibleinfo[book_idx]), self.model.bibleinfo[book_idx][-1]))
+
+            self.assertEquals(s, b)
+
+        self.assertEquals(str(self.model.Book(2)), 'three')
+        self.assertEquals(str(self.model.Book(0)), 'one')
+        self.assertRaises(ValueError, self.model.Book, 10)
+
+
+    def test_chapter(self):
+        for book_idx in xrange(0, len(self.model.bibleinfo)):
+            for chapter in xrange(1, len(self.model.bibleinfo[book_idx]) + 1):
+                c = self.model.Chapter(book_idx, chapter)
+                s = self.model.Span(self.model.Verse(book_idx, chapter, 1), self.model.Verse(book_idx, chapter, self.model.bibleinfo[book_idx][chapter-1]))
+
+                self.assertEquals(s, c)
+
+        self.assertRaises(ValueError, self.model.Chapter, 3, 0)
+
+
+    def test_passage_verse_iter(self):
+        p = self.model.Passage('one - six')
+        it = verse_iter(p)
+
+        for book in xrange(0, 6):
+            for chapter in xrange(1, book + 2):
+                for verse in xrange(1, chapter + 1):
+                    self.assertEquals(it.next(), self.model.Verse(book, chapter, verse))
+        self.assertRaises(StopIteration, it.next)
+
+
+    def test_span_verse_iter(self):
+        s = self.model.Span('one - six')
+        it = verse_iter(s)
+
+        for book in xrange(0, 6):
+            for chapter in xrange(1, book + 2):
+                for verse in xrange(1, chapter + 1):
+                    self.assertEquals(it.next(), self.model.Verse(book, chapter, verse))
+        self.assertRaises(StopIteration, it.next)
+
+
+    def test_verse_verse_iter(self):
+        v = self.model.Verse('one 1:1')
+        it = verse_iter(v)
+
+        self.assertEquals(it.next(), self.model.Verse(0, 1, 1))
+        self.assertRaises(StopIteration, it.next)
 
 
 if __name__ == '__main__':
