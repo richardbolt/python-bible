@@ -25,27 +25,27 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import unittest
-import tokenizer
-from tokenizer import Tokenizer
-from tokenizer import WhitespaceFilter
-from tokenizer import Token
-from vfilter import _fusespans
-from vfilter import _fusespanlist
-from vfilter import PPassageRectifier
-from vfilter import PPassageFilter
-from vfilter import PVerseSpanFilter
-from vfilter import PVerseFilter
-from vfilter import BookFilter
-from vfilter import BookMatcher
-from vfilter import PPassage
-from vfilter import PVerse
-from vfilter import PVerseSpan
-from vfilter import VFilterToken
-from vfilter import _fix_verse_range
-from vfilter import _rectify_passage
-from vfilter import _verse_partial_cmp
-from vfilter import _isnextverse
-from vfilter import _nextverse
+from estienne import tokenizer
+from estienne.tokenizer import Tokenizer
+from estienne.tokenizer import WhitespaceFilter
+from estienne.tokenizer import Token
+from estienne.vfilter import _fusespans
+from estienne.vfilter import _fusespanlist
+from estienne.vfilter import PPassageRectifier
+from estienne.vfilter import PPassageFilter
+from estienne.vfilter import PVerseSpanFilter
+from estienne.vfilter import PVerseFilter
+from estienne.vfilter import BookFilter
+from estienne.vfilter import BookMatcher
+from estienne.vfilter import PPassage
+from estienne.vfilter import PVerse
+from estienne.vfilter import PVerseSpan
+from estienne.vfilter import VFilterToken
+from estienne.vfilter import _fix_verse_range
+from estienne.vfilter import _rectify_passage
+from estienne.vfilter import _verse_partial_cmp
+from estienne.vfilter import _isnextverse
+from estienne.vfilter import _nextverse
 from testbible import bibledef
 from testbible import build_bibleinfo
 

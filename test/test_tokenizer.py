@@ -25,9 +25,9 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import unittest
-from tokenizer import Token
-from tokenizer import Tokenizer
-from tokenizer import WhitespaceFilter
+from estienne.tokenizer import Token
+from estienne.tokenizer import Tokenizer
+from estienne.tokenizer import WhitespaceFilter
 
 def outer_assigned():
     var_outer = False

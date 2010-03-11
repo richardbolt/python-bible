@@ -25,16 +25,16 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import unittest
-from vfilter import BookMatcher
-from vfilter import PVerse
-from vfilter import PVerseSpan
-from vfilter import PPassage
+from estienne.vfilter import BookMatcher
+from estienne.vfilter import PVerse
+from estienne.vfilter import PVerseSpan
+from estienne.vfilter import PPassage
 
-from stdref import PassageFormatter
-from stdref import match
-from stdref import search
-from stdref import BibleModel
-from stdref import verse_iter
+from estienne.stdref import PassageFormatter
+from estienne.stdref import match
+from estienne.stdref import search
+from estienne.stdref import BibleModel
+from estienne.stdref import verse_iter
 
 from testbible import bibledef
 from testbible import build_bibleinfo
