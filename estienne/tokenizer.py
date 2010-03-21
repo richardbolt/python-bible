@@ -109,7 +109,7 @@ class Token(object):
             repr_type = type(self)._REPR_TYPE[self.type]
         except KeyError:
             repr_type = repr(self.type)
-        return "Token({0}, {1}, {2}, {3}, {4}, {5}, {6})".format(repr_type, repr(self.value), repr(self.start), repr(self.end), repr(self.row), repr(self.col), repr(self.leaves))
+        return "Token({0}, {1}, {2}, {3}, {4}, {5})".format(repr_type, repr(self.value), repr(self.start), repr(self.end), repr(self.row), repr(self.col))
 
 
 def _chartype(char):
