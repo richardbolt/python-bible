@@ -232,7 +232,7 @@ def match(string, matcher, bibleinfo):
         if t.type == VFilterToken.PASSAGE:
             passage_token = t
         else:
-            raise ValueError('Not a valid passage.')
+            raise ValueError('String "%s" is not a valid passage.'  % string)
 
     return passage_token
 
