@@ -483,7 +483,7 @@ class PPassageFilter(object):
                 tokens.append(t)
                 spans.append(t.value)
                 seed = t.value.last
-            elif spans and t_comma is None and t.type == Token.SYMBOL and t.value == ',':
+            elif spans and t_comma is None and t.type == Token.SYMBOL and (t.value == ',' or t.value == ';'):
                 t_comma = t
             else:
                 # Unexpected tokens
