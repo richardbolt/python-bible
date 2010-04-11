@@ -58,6 +58,11 @@ class TestTokenizer(unittest.TestCase):
         self.assertEquals(colon, Token(Token.SYMBOL, ':', 6, 7, 1, 7))
 
 
+    def test_empty_str(self):
+        tokenizer = Tokenizer('')
+        self.assertRaises(StopIteration, tokenizer.next)
+
+
     def test_newline(self):
         string = 'Hello \n newlines'
         tokenizer = Tokenizer(string)

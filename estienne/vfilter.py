@@ -28,6 +28,7 @@ import string
 import os.path
 from tokenizer import Token
 import itertools
+from collections import deque
 
 
 class PVerse(object):
@@ -354,7 +355,7 @@ class PVerseFilter(object):
 
 class PVerseSpanFilter(object):
     def __init__(self, token_iterable):
-        self._fifo = []
+        self._fifo = deque()
         self._it = PVerseFilter(token_iterable)
 
     def __iter__(self):
@@ -371,12 +372,12 @@ class PVerseSpanFilter(object):
         while True:
             try:
                 if self._fifo:
-                    t = self._fifo.pop(0)
+                    t = self._fifo.popleft()
                 else:
                     t = self._it.seeded_next(seed)
             except StopIteration:
                 if t_dash is not None and t_finish is None:
-                    self._fifo.append(dash)
+                    self._fifo.append(t_dash)
 
                 if t_start:
                     if t_finish is None:
@@ -444,7 +445,7 @@ class PVerseSpanFilter(object):
 class PPassageFilter(object):
     def __init__(self, token_iterable):
         self._it = PVerseSpanFilter(token_iterable)
-        self._fifo = []
+        self._fifo = deque()
 
     def __iter__(self):
         return self
@@ -459,7 +460,7 @@ class PPassageFilter(object):
         while True:
             try:
                 if self._fifo:
-                    t = self._fifo.pop(0)
+                    t = self._fifo.popleft()
                 else:
                     t = self._it.seeded_next(seed)
             except StopIteration:

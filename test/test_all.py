@@ -7,12 +7,14 @@ import sys
 import test_stdref
 import test_tokenizer
 import test_vfilter
+import test_models
 
 loader = unittest.TestLoader()
 suites = [
     loader.loadTestsFromModule(test_stdref),
     loader.loadTestsFromModule(test_tokenizer),
     loader.loadTestsFromModule(test_vfilter),
+    #loader.loadTestsFromModule(test_models),
 ]
 comprehensive_suite = unittest.TestSuite(suites)
 

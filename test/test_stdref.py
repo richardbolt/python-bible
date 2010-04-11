@@ -35,6 +35,7 @@ from estienne.stdref import match
 from estienne.stdref import search
 from estienne.stdref import BibleModel
 from estienne.stdref import verse_iter
+from estienne.stdref import count_verses
 
 from testbible import bibledef
 from testbible import build_bibleinfo
@@ -49,12 +50,14 @@ f = open('books.txt')
 FORMATTER = PassageFormatter.fromfile(f)
 f.close()
 
-class TestBookFilter(unittest.TestCase):
+class TestMatch(unittest.TestCase):
     def test_match(self):
         t = match('Genesis 4:12', MATCHER, BIBLEINFO)
         v = PVerse(0, 4, 12)
         self.assertEquals(t.value, PPassage([PVerseSpan(v, v)]))
 
+
+class TestSearch(unittest.TestCase):
     def test_search(self):
         string = "Glory, I'm back home Genesis 16:32 - Genesis 3\n in Exodus 1:10 - Exodus 1:5 Canada"
         tokens = list(search(string, MATCHER, BIBLEINFO))
@@ -64,7 +67,7 @@ class TestBookFilter(unittest.TestCase):
         self.assertEquals(tokens[1].value, PPassage([PVerseSpan(PVerse(1, 1, 5), PVerse(1, 1, 10))]))
 
 
-class TestBibleModel(unittest.TestCase):
+class ModelBibleFixture(unittest.TestCase):
     def setUp(self):
         akas = (
             ('one',),
@@ -92,6 +95,9 @@ class TestBibleModel(unittest.TestCase):
 
         self.model = BibleModel(bibleinfo, matcher, formatter)
 
+
+
+class TestBibleModel(ModelBibleFixture):
     def test_bibleinfo(self):
         self.assertTrue(self.model.bibleinfo)
 
@@ -101,9 +107,16 @@ class TestBibleModel(unittest.TestCase):
 
 
     def test_match(self):
+        self.assertRaises(ValueError, self.model.match, '')
+        self.assertRaises(ValueError, self.model.match, 'flugelhorn')
+
         t = self.model.match('five 3:2')
         v = PVerse(4, 3, 2)
         self.assertEquals(t.value, PPassage([PVerseSpan(v, v)]))
+
+
+    def test_matchbook(self):
+        self.assertEquals(self.model.matchbook('five'), 4)
 
 
     def test_search(self):
@@ -125,6 +138,8 @@ class TestBibleModel(unittest.TestCase):
 
     def test_passage(self):
         self.assertRaises(ValueError, self.model.Passage, 'flugelhorn')
+        self.assertRaises(ValueError, self.model.Passage, '')
+        self.assertRaises(TypeError, self.model.Passage, None)
 
         s = 'one 1:1 - four 3:1'
         p = self.model.Passage(s)
@@ -195,6 +210,114 @@ class TestBibleModel(unittest.TestCase):
         self.assertRaises(ValueError, self.model.Chapter, 3, 0)
 
 
+class TestBibleModelFormatter(ModelBibleFixture):
+    def test_chapter_format(self):
+        model = self.model
+
+        p = model.Passage('four 3')
+        self.assertEquals(str(p), 'four 3')
+
+
+class TestBibleModelVerse(ModelBibleFixture):
+    def test_verse_comparison(self):
+        model = self.model
+
+        # Test inequality
+        self.assertFalse(model.Verse('two 1:1') < model.Verse('one 1:1'))
+        self.assertFalse(model.Verse('two 1:1') <= model.Verse('one 1:1'))
+        self.assertTrue(model.Verse('two 1:1') != model.Verse('two 2:1'))
+        self.assertTrue(model.Verse('two 1:1') <= model.Verse('two 2:1'))
+        self.assertTrue(model.Verse('two 1:1') < model.Verse('two 2:1'))
+
+        self.assertTrue(model.Verse('two 1:1') > model.Verse('one 1:1'))
+        self.assertTrue(model.Verse('two 1:1') >= model.Verse('one 1:1'))
+        self.assertFalse(model.Verse('two 1:1') == model.Verse('two 2:1'))
+        self.assertFalse(model.Verse('two 1:1') >= model.Verse('two 2:1'))
+        self.assertFalse(model.Verse('two 1:1') > model.Verse('two 2:1'))
+
+        # Test equality
+        self.assertTrue(model.Verse('two 1:1') == model.Verse('two 1:1'))
+        self.assertTrue(model.Verse('two 1:1') <= model.Verse('two 1:1'))
+        self.assertTrue(model.Verse('two 1:1') >= model.Verse('two 1:1'))
+
+
+class TestBibleModelSpan(ModelBibleFixture):
+    def test_issuperset_verse(self):
+        model = self.model
+        self.assertTrue(model.Span('one 1:1').issuperset(model.Verse('one 1:1')))
+        self.assertTrue(model.Span('one 1:1-two 1:1').issuperset(model.Verse('one 1:1')))
+        self.assertFalse(model.Span('one 1:1-two 1:1').issuperset(model.Verse('two 2:1')))
+        self.assertFalse(model.Span('two').issuperset(model.Verse('one')))
+
+
+    def test_issuperset_span(self):
+        model = self.model
+        self.assertFalse(model.Span('three').issuperset(model.Span('two')))
+        self.assertFalse(model.Span('three').issuperset(model.Span('two - three 1:1')))
+        self.assertTrue(model.Span('three').issuperset(model.Span('three')))
+        self.assertTrue(model.Span('three').issuperset(model.Span('three 2:2')))
+        self.assertFalse(model.Span('three').issuperset(model.Span('three 2:2 - four')))
+        self.assertFalse(model.Span('three').issuperset(model.Span('four')))
+
+
+    def test_issuperset_passage(self):
+        model = self.model
+        self.assertFalse(model.Span('three').issuperset(model.Passage('two')))
+        self.assertFalse(model.Span('three').issuperset(model.Passage('two - three 1:1')))
+        self.assertTrue(model.Span('three').issuperset(model.Passage('three')))
+        self.assertTrue(model.Span('three').issuperset(model.Passage('three 2:2')))
+        self.assertFalse(model.Span('three').issuperset(model.Passage('three 2:2 - four')))
+        self.assertFalse(model.Span('three').issuperset(model.Passage('four')))
+
+        self.assertFalse(model.Span('three').issuperset(model.Passage('three, five')))
+        self.assertFalse(model.Span('three').issuperset(model.Passage('three, one')))
+
+
+class TestBibleModelPassage(ModelBibleFixture):
+    def test_issuperset_verse(self):
+        model = self.model
+        # Single span
+        self.assertTrue(model.Passage('one 1:1').issuperset(model.Verse('one 1:1')))
+        self.assertTrue(model.Passage('one 1:1-two 1:1').issuperset(model.Verse('one 1:1')))
+        self.assertFalse(model.Passage('one 1:1-two 1:1').issuperset(model.Verse('two 2:1')))
+        self.assertFalse(model.Passage('two').issuperset(model.Verse('one')))
+
+        # Double-span
+        self.assertTrue(model.Passage('one, five').issuperset(model.Verse('one 1:1')))
+        self.assertTrue(model.Passage('one, three').issuperset(model.Verse('three 1:1')))
+        self.assertTrue(model.Passage('five, two').issuperset(model.Verse('two 2:1')))
+        self.assertFalse(model.Passage('two').issuperset(model.Verse('one')))
+
+
+    def test_issuperset_span(self):
+        model = self.model
+        self.assertFalse(model.Passage('three').issuperset(model.Span('two')))
+        self.assertFalse(model.Passage('three').issuperset(model.Span('two - three 1:1')))
+        self.assertTrue(model.Passage('three').issuperset(model.Span('three')))
+        self.assertTrue(model.Passage('three').issuperset(model.Span('three 2:2')))
+        self.assertFalse(model.Passage('three').issuperset(model.Span('three 2:2 - four')))
+        self.assertFalse(model.Passage('three').issuperset(model.Span('four')))
+
+
+    def test_issuperset_passage(self):
+        model = self.model
+        self.assertFalse(model.Passage('three').issuperset(model.Passage('two')))
+        self.assertFalse(model.Passage('three').issuperset(model.Passage('two - three 1:1')))
+        self.assertTrue(model.Passage('three').issuperset(model.Passage('three')))
+        self.assertTrue(model.Passage('three').issuperset(model.Passage('three 2:2')))
+        self.assertFalse(model.Passage('three').issuperset(model.Passage('three 2:2 - four')))
+        self.assertFalse(model.Passage('three').issuperset(model.Passage('four')))
+
+        self.assertFalse(model.Passage('three').issuperset(model.Passage('three, five')))
+        self.assertFalse(model.Passage('three').issuperset(model.Passage('three, one')))
+
+
+        self.assertTrue(model.Passage('three, five').issuperset(model.Passage('three, five')))
+        self.assertTrue(model.Passage('three, five, six').issuperset(model.Passage('three, five')))
+        self.assertFalse(model.Passage('three, five').issuperset(model.Passage('three, five, six')))
+
+
+class TestVerseIter(ModelBibleFixture):
     def test_passage_verse_iter(self):
         p = self.model.Passage('one - six')
         it = verse_iter(p)
@@ -223,6 +346,25 @@ class TestBibleModel(unittest.TestCase):
 
         self.assertEquals(it.next(), self.model.Verse(0, 1, 1))
         self.assertRaises(StopIteration, it.next)
+
+
+    def test_offset_passage_verse_iter(self):
+        p = self.model.Passage('two 2:1')
+        it = verse_iter(p)
+        self.assertEquals(len(list(it)), count_verses(p))
+
+
+class TestCountVerses(ModelBibleFixture):
+    def test_count_verses_passage(self):
+        p = self.model.Passage('one - six')
+
+        expected_num_verses = 0
+
+        for book in self.model.bibleinfo:
+            for chapter in book:
+                expected_num_verses += chapter
+
+        self.assertEquals(count_verses(p), expected_num_verses)
 
 
 if __name__ == '__main__':

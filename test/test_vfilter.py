@@ -81,6 +81,11 @@ class TestBookFilter(unittest.TestCase):
         return tokenizer.WhitespaceFilter(Tokenizer(string))
 
 
+    def test_empty_str(self):
+        self.assertRaises(StopIteration, self.tokenStream('').next)
+        self.assertRaises(StopIteration, BookFilter(self.tokenStream(''), self.matcher).next)
+
+
     def test_filter_ofs(self):
         string = 'Genesis 4:12'
         tokens = list(BookFilter(self.tokenStream(string), self.matcher))
@@ -131,27 +136,8 @@ class TestPVerseFilter(unittest.TestCase):
         self.assertEquals(genesis, VFilterToken(VFilterToken.VERSE, PVerse(0, 5, None), 22, 31, 1, 23))
 
 
-class TestPVerseSpanFilter(unittest.TestCase):
-    def _tokenStream(self, string):
-        f = open('books.txt')
-        matcher = BookMatcher.fromfile(f)
-        f.close()
-
-        return PVerseSpanFilter(BookFilter(WhitespaceFilter(Tokenizer(string)), matcher))
-
-    def _xtest_verse(self):
-        tokenizer = self._tokenStream('John 3:16, 17, 18, 19, 20 flugelhorn genesis 5')
-        self.assertTrue(tokenizer is not None)
-        tokens = list(tokenizer)
-        for t in tokens:
-            print t
-        self.assertEquals(len(tokens), 4)
-        john, comma, flugelhorn, genesis = tokens
-
-        self.assertEquals(john, VFilterToken(VFilterToken.VERSE, PVerse(42, 3, 16), 0, 9, 1, 1))
-        self.assertEquals(comma, Token(Token.SYMBOL, ',', 9, 10, 1, 10))
-        self.assertEquals(flugelhorn, Token(Token.WORD, 'flugelhorn', 11, 21, 1, 12))
-        self.assertEquals(genesis, VFilterToken(VFilterToken.VERSE, PVerse(0, 5, None), 22, 31, 1, 23))
+    def test_empty_str(self):
+        self.assertRaises(StopIteration, self._tokenStream('').next)
 
 
 class TestPPassageFilter(unittest.TestCase):
@@ -161,6 +147,10 @@ class TestPPassageFilter(unittest.TestCase):
         f.close()
 
         return PPassageFilter(BookFilter(tokenizer.WhitespaceFilter(Tokenizer(string)), matcher))
+
+
+    def test_empty_str(self):
+        self.assertRaises(StopIteration, self._tokenStream('').next)
 
 
     def test_books(self):
@@ -286,6 +276,43 @@ class TestPPassageFilter(unittest.TestCase):
         self.assertEquals(t_genesis, VFilterToken(VFilterToken.PASSAGE, p, 37, 46, 2, 1))
 
 
+    def test_dash(self):
+        ref = 'Gen 1 -'
+
+        tokenizer = self._tokenStream(ref)
+        self.assertTrue(tokenizer is not None)
+        tokens = list(tokenizer)
+        self.assertEquals(len(tokens), 2)
+
+
+    def test_semicolon(self):
+        ref = '''Titus 2:12; 2 Peter 1:4; 2:20; Ephesians 2:2;
+        Matthew 13:
+        22; 1 Corinthians 1:20; 2 Corinthians 4:4; Galatians 1:4'''
+
+        tokenizer = self._tokenStream(ref)
+        self.assertTrue(tokenizer is not None)
+        tokens = list(tokenizer)
+        self.assertEquals(len(tokens), 1)
+        t_passage = tokens
+
+        #~ p = PPassage((
+                #~ PVerseSpan(PVerse(39, 3, 16), PVerse(42, 3, 16)),
+                #~ PVerseSpan(PVerse(42, 3, 17), PVerse(42, 3, 17)),
+                #~ PVerseSpan(PVerse(42, 3, 18), PVerse(42, 3, 18)),
+                #~ PVerseSpan(PVerse(42, 3, 19), PVerse(42, 3, 19)),
+                #~ PVerseSpan(PVerse(42, 3, 20), PVerse(42, 3, 20)),
+            #~ ))
+        #~ self.assertEquals(t_john, VFilterToken(VFilterToken.PASSAGE, p, 0, 25, 1, 1))
+        #~ self.assertEquals(t_flugelhorn, Token(Token.WORD, 'flugelhorn', 26, 36, 1, 27))
+
+        #~ p = PPassage((
+                #~ PVerseSpan(PVerse(0, 5, None), PVerse(0, 5, None)),
+            #~ ))
+        #~ self.assertEquals(t_genesis, VFilterToken(VFilterToken.PASSAGE, p, 37, 46, 2, 1))
+
+
+
 
 
 class TestSpanFusing(unittest.TestCase):
@@ -295,6 +322,7 @@ class TestSpanFusing(unittest.TestCase):
         self.bibleinfo = build_bibleinfo()
 
         self.sixbibleinfo = SIXBIBLEINFO
+
 
     def test_fusespans_a(self):
         s1 = PVerseSpan(PVerse(0, 1, 1), PVerse(0, 1, 10))
@@ -461,6 +489,11 @@ class TestPPassageRectifier(unittest.TestCase):
 
     def _rectifiedStream(self, string):
         return PPassageRectifier(self._tokenStream(string), self.bibleinfo)
+
+
+    def test_empty_str(self):
+        self.assertRaises(StopIteration, self._rectifiedStream6('').next)
+
 
     def test_reordering(self):
         tokens = list(self._rectifiedStream('Exodus, Genesis'))

@@ -24,6 +24,8 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+'''Standard bible model and references.'''
+
 from itertools import chain
 
 from tokenizer import Tokenizer
@@ -35,6 +37,86 @@ from vfilter import PPassageFilter
 from vfilter import PPassageRectifier
 from vfilter import VFilterToken
 from vfilter import _fusespanlist
+
+
+ #~ |  add(...)
+ #~ |      Add an element to a set.
+ #~ |
+ #~ |      This has no effect if the element is already present.
+ #~ |
+ #~ |  clear(...)
+ #~ |      Remove all elements from this set.
+ #~ |
+ #~ |  copy(...)
+ #~ |      Return a shallow copy of a set.
+ #~ |
+ #~ |  difference(...)
+ #~ |      Return the difference of two or more sets as a new set.
+ #~ |
+ #~ |      (i.e. all elements that are in this set but not the others.)
+ #~ |
+ #~ |  difference_update(...)
+ #~ |      Remove all elements of another set from this set.
+ #~ |
+ #~ |  discard(...)
+ #~ |      Remove an element from a set if it is a member.
+ #~ |
+ #~ |      If the element is not a member, do nothing.
+ #~ |
+ #~ |  intersection(...)
+ #~ |      Return the intersection of two sets as a new set.
+ #~ |
+ #~ |      (i.e. all elements that are in both sets.)
+ #~ |
+ #~ |  intersection_update(...)
+ #~ |      Update a set with the intersection of itself and another.
+ #~ |
+ #~ |  isdisjoint(...)
+ #~ |      Return True if two sets have a null intersection.
+ #~ |
+ #~ |  issubset(...)
+ #~ |      Report whether another set contains this set.
+ #~ |
+ #~ |  issuperset(...)
+ #~ |      Report whether this set contains another set.
+ #~ |
+ #~ |  pop(...)
+ #~ |      Remove and return an arbitrary set element.
+ #~ |      Raises KeyError if the set is empty.
+ #~ |
+ #~ |  remove(...)
+ #~ |      Remove an element from a set; it must be a member.
+ #~ |
+ #~ |      If the element is not a member, raise a KeyError.
+ #~ |
+ #~ |  symmetric_difference(...)
+ #~ |      Return the symmetric difference of two sets as a new set.
+ #~ |
+ #~ |      (i.e. all elements that are in exactly one of the sets.)
+ #~ |
+ #~ |  symmetric_difference_update(...)
+ #~ |      Update a set with the symmetric difference of itself and another.
+ #~ |
+ #~ |  union(...)
+ #~ |      Return the union of sets as a new set.
+ #~ |
+ #~ |      (i.e. all elements that are in either set.)
+ #~ |
+ #~ |  update(...)
+ #~ |      Update a set with the union of itself and others.
+class VerseSetBehaviour(object):
+    def isdisjoint(self, other):
+        '''Return True if two sets have a null intersection.'''
+        pass
+
+    def issubset(self, other):
+        '''Report whether another set contains this set.'''
+        pass
+
+    def issuperset(self, other):
+        '''Report whether this set contains another set.'''
+        pass
+
 
 
 class BibleRef(object):
@@ -52,8 +134,8 @@ class BibleRef(object):
         return str(self)
 
 
-class Passage(BibleRef):
-    def __init__(self, spans, model):
+class SpanSet(BibleRef):
+    def __init__(self, model, arg):
         BibleRef.__init__(self, model)
         self._spans = tuple(VerseSpan(s.first, s.last, model) for s in spans)
 
@@ -63,20 +145,110 @@ class Passage(BibleRef):
 
 
     def __iter__(self):
-        return iter(self.spans)
+        return iter(self._spans)
+
+
+class Passage(BibleRef):
+    '''Creates a passage to represent `arg` where `arg` is an
+    iterable of unsorted/overlapping :class:`VerseSpan` objects and
+    :class:`model` is a :class:`BibleModel` object.
+
+    Passages are ordered lists of non-contiguous, non-overlapping
+    unique verses.
+    '''
+
+    def __init__(self, model, arg):
+        BibleRef.__init__(self, model)
+
+        if type(arg) is str:
+            t = self.model.match(arg)
+            fused_spans = tuple(model.Span(model.Verse(s.first.book, s.first.chapter, s.first.verse), model.Verse(s.last.book, s.last.chapter, s.last.verse)) for s in t.value.spans)
+        else:
+            spans = arg
+            fused_spans = tuple(model.Span(model.Verse(s.first.book, s.first.chapter, s.first.verse), model.Verse(s.last.book, s.last.chapter, s.last.verse)) for s in _fusespanlist(spans, model.bibleinfo))
+        #~ else:
+            #~ raise TypeError('unsupported type %s' % repr(reference_or_spans))
+
+        self._spans = fused_spans
+
+
+    @property
+    def spans(self):
+        return self._spans
+
+
+    def __len__(self):
+        '''Returns the number of :class:`VerseSpan` objects in the passage.'''
+        return len(self._spans)
+
+
+    def __iter__(self):
+        return iter(self._spans)
+
+
+    def issuperset(self, other):
+        '''True if this passage contains all verses in `other` and False
+        otherwise; `other` is  a  is a :class:`Verse`,
+        :class:`VerseSpan`, or :class:`Passage` object.'''
+
+        # Very niave implementation, but it works.
+        rc = False
+        if is_verse(other) or is_span(other):
+            for s in self.spans:
+                if s.issuperset(other):
+                    rc = True
+        elif is_passage(other):
+            rc = True
+            for other_span in other.spans:
+                for self_span in self.spans:
+                    if self_span.issuperset(other_span):
+                        break
+                else:
+                    rc = False
+                    break
+        else:
+            raise TypeError()
+
+        return rc
+
+
+
+def _count_span_verses(span):
+    '''Counts the number of verses in a VerseSPan.'''
+
+    num_verses = 0
+    for book_idx in xrange(span.first.book, span.last.book + 1):
+        start_chapter_idx = 0
+        stop_chapter_idx = len(span.model.bibleinfo[book_idx])
+
+        if book_idx == span.first.book:
+            start_chapter_idx = span.first.chapter - 1
+
+        if book_idx == span.last.book:
+            stop_chapter_idx = span.last.chapter
+
+        for chapter_idx in xrange(start_chapter_idx, stop_chapter_idx):
+            start_verse_idx = 0
+            stop_verse_idx = span.model.bibleinfo[book_idx][chapter_idx]
+
+            if book_idx == span.first.book and chapter_idx == span.first.chapter - 1:
+                start_verse_idx = span.first.verse - 1
+
+            if book_idx == span.last.book and chapter_idx == span.last.chapter - 1:
+                stop_verse_idx = span.last.verse
+
+            num_verses += stop_verse_idx - start_verse_idx
+
+    return num_verses
 
 
 class VerseSpan(BibleRef):
-    def __calc_len(self):
-        return 5
-        #for book in xrange(self._first.book, self._last.book + 1):
-
-
+    '''An ordered list of contiguous, unique verses.'''
     def __init__(self, first, last, model):
         BibleRef.__init__(self, model)
         self._first = first
         self._last = last
-        self.__len = self.__calc_len()
+        self.__len = _count_span_verses(self)
 
     @property
     def first(self):
@@ -86,12 +258,44 @@ class VerseSpan(BibleRef):
     def last(self):
         return self._last
 
+
+    def isdisjoint(self, other):
+        '''Return True if two sets have a null intersection.'''
+        raise NotImplementedError()
+
+
+    def issubset(self, other):
+        '''Report whether another set contains this set.'''
+        raise NotImplementedError()
+
+
+    def issuperset(self, other):
+        '''True if this span contains all verses in `other` and False
+        otherwise; `other` is  a  is a :class:`Verse`,
+        :class:`VerseSpan`, or :class:`Passage` object.'''
+
+        rc = False
+        if is_verse(other):
+            if self.first <= other and other <= self.last:
+                rc = True
+        elif is_span(other):
+            if self.first <= other.first and other.last <= self.last:
+                rc = True
+        elif is_passage(other):
+            rc = True
+            for span in other:
+                rc = rc and self.issuperset(span)
+        else:
+            raise TypeError()
+
+        return rc
+
+
     def __iter__(self):
         return VerseSpanIt(self)
 
     def __len__(self):
         return self.__len
-
 
     def __eq__(self, other):
         return self._first == other._first and self._last == other._last and self.model == other.model
@@ -115,14 +319,17 @@ class Verse(BibleRef):
 
     @property
     def book(self):
+        '''Verse book id: `int`.'''
         return self._book
 
     @property
     def chapter(self):
+        '''Verse chapter: `int`.'''
         return self._chapter
 
     @property
     def verse(self):
+        '''Verse number: `int`.'''
         return self._verse
 
 
@@ -185,23 +392,37 @@ class PassageFormatter(object):
         if first.book == last.book and \
                     first.chapter == 1 and first.verse == 1 and \
                     last.chapter == len(span.model.bibleinfo[first.book]) and last.verse == span.model.bibleinfo[first.book][-1]:
+            # Exodus
             return self._lut[first.book]
         elif span.first == span.last:
+            # Genesis 5:1
             return self._format_verse(span.first)
         elif first.chapter == 1 and first.verse == 1 and \
                     last.chapter == len(span.model.bibleinfo[last.book]) and last.verse == span.model.bibleinfo[last.book][last.chapter - 1]:
+            # Exodus - Leviticus
             return '%s - %s' % (self._lut[first.book], self._lut[last.book])
-        elif first.chapter == 1 and first.verse == 1 and last.chapter == len(span.model.bibleinfo[last.book]) and last.verse == span.model.bibleinfo[last.book][last.chapter - 1]:
-            return '%s - %s' % (self._lut[first.book], self._lut[last.book])
+        elif first.book == last.book and first.chapter == last.chapter and \
+                first.verse == 1 and \
+                last.verse == span.model.bibleinfo[last.book][last.chapter - 1]:
+            # Genesis 5
+            return '%s %d' % (self._lut[first.book], first.chapter)
         elif first.book == last.book and first.chapter == last.chapter:
+            # Genesis 1:5-10
             return '%s %d:%d - %d' % (self._lut[first.book], first.chapter, first.verse, last.verse)
         elif first.book == last.book:
+            # Genesis 4:5 - 6:4
             return '%s %d:%d - %d:%d' % (self._lut[first.book], first.chapter, first.verse, last.chapter, last.verse)
         else:
+            # Genesis 4:5 - Exodus 5:12
             return '%s %d:%d - %s %d:%d' % (self._lut[first.book], first.chapter, first.verse, self._lut[last.book], last.chapter, last.verse)
 
     def _format_verse(self, verse):
         return '%s %d:%d' % (self._lut[verse.book], verse.chapter, verse.verse)
+
+
+    def booktitle(self, book_idx):
+        return self._lut[book_idx]
+
 
     def format(self, passage_span_or_verse):
         if hasattr(passage_span_or_verse, 'spans'):
@@ -214,31 +435,39 @@ class PassageFormatter(object):
             raise Exception('Unknown type')
 
 
-def tokenizer(string, matcher, bibleinfo):
+def tokenizer(string, bookmatcher, bibleinfo):
     tokenizer = Tokenizer(string)
     f0 = WhitespaceFilter(tokenizer)
-    f1 = BookFilter(f0, matcher)
+    f1 = BookFilter(f0, bookmatcher)
     f2 = PPassageFilter(f1)
     f3 = PPassageRectifier(f2, bibleinfo)
 
     return f3
 
 
-def match(string, matcher, bibleinfo):
-    it = tokenizer(string, matcher, bibleinfo)
+def match(string, bookmatcher, bibleinfo):
+    '''Match a verse reference.
+
+    :param string: string to match.
+    :param bookmatcher:
+    :type bookmatcher: .. class::`estienne.vfilter.BookMatcher`'''
+    it = tokenizer(string, bookmatcher, bibleinfo)
 
     passage_token = None
     for t in it:
         if t.type == VFilterToken.PASSAGE:
             passage_token = t
         else:
-            raise ValueError('String "%s" is not a valid passage.'  % string)
+            break
+
+    if passage_token is None:
+        raise ValueError('string %s is not a valid passage' % repr(string))
 
     return passage_token
 
 
-def search(string, matcher, bibleinfo):
-    it = tokenizer(string, matcher, bibleinfo)
+def search(string, bookmatcher, bibleinfo):
+    it = tokenizer(string, bookmatcher, bibleinfo)
 
     for t in it:
         if t.type == VFilterToken.PASSAGE:
@@ -248,21 +477,30 @@ def search(string, matcher, bibleinfo):
 
 
 class BibleModel(object):
-    def __init__(self, bibleinfo, matcher, formatter):
+    def __init__(self, bibleinfo, bookmatcher, formatter):
         self._bibleinfo = bibleinfo
-        self._matcher = matcher
+        self._bookmatcher = bookmatcher
         self._formatter = formatter
+        self._offsets = self.build_offsets()
 
 
-    def Passage(self, reference_or_spans):
-        if type(reference_or_spans) is str:
-            t = self.match(reference_or_spans)
-            fused_spans = [self.Span(self.Verse(s.first.book, s.first.chapter, s.first.verse), self.Verse(s.last.book, s.last.chapter, s.last.verse)) for s in t.value.spans]
-        else:
-            spans = reference_or_spans
-            fused_spans = [self.Span(self.Verse(s.first.book, s.first.chapter, s.first.verse), self.Verse(s.last.book, s.last.chapter, s.last.verse)) for s in _fusespanlist(spans, self.bibleinfo)]
+    def build_offsets(self):
+        offsets = []
 
-        return Passage(fused_spans, self)
+        ofs = 0
+        for book_idx in xrange(0, len(self.bibleinfo)):
+            chapter_offsets = []
+            for chapter_idx in xrange(0, len(self.bibleinfo[book_idx])):
+                chapter_offsets.append(ofs)
+                ofs += self.bibleinfo[book_idx][chapter_idx]
+
+            offsets.append(tuple(chapter_offsets))
+
+        return tuple(offsets)
+
+
+    def Passage(self, arg):
+        return Passage(self, arg)
 
 
     def Book(self, *args):
@@ -290,8 +528,8 @@ class BibleModel(object):
     def Chapter(self, *args):
         '''
         Synopsis:
-            Book(int, int)
-            Book(str) # not presently supported
+            Chapter(book: int, chapter: int)
+            Chapter(book: str, chapter: int) # not presently supported
         '''
 
         if len(args) == 2:
@@ -331,9 +569,9 @@ class BibleModel(object):
     def Verse(self, *args):
         '''
         Synopsis:
-        Verse(str, int, int) where str is a book
-        Verse(int, int, int)
-        Verse(str)
+            Verse(str, int, int) where str is a book
+            Verse(int, int, int)
+            Verse(str)
         '''
         if len(args) == 3 and type(args[0]) is int and type(args[1]) is int and type(args[2]) is int:
             book = args[0]
@@ -341,7 +579,7 @@ class BibleModel(object):
             verse = args[2]
             v = Verse(book, chapter, verse, self)
         elif len(args) == 3 and type(args[0]) is str and type(args[1]) is int and type(args[2]) is int:
-            book_idx = self._matcher.match(args[0])
+            book_idx = self._bookmatcher.match(args[0])
             chapter = args[1]
             verse = args[2]
             if book_idx is None:
@@ -363,33 +601,39 @@ class BibleModel(object):
         return v
 
     def match(self, string):
-        passage = match(string, self._matcher, self._bibleinfo)
+        passage = match(string, self._bookmatcher, self._bibleinfo)
         return passage
 
+
+    def matchbook(self, string):
+        return self._bookmatcher.match(string)
+
+
     def search(self, string):
-        for p in search(string, self._matcher, self._bibleinfo):
+        for p in search(string, self._bookmatcher, self._bibleinfo):
             yield p
 
     def tokens(self, string):
-        for t in tokenizer(string, self._matcher, self._bibleinfo):
+        for t in tokenizer(string, self._bookmatcher, self._bibleinfo):
             yield t
 
     def format(self, string):
         return self.formatter.format(string)
 
+
     @property
     def bibleinfo(self):
         return self._bibleinfo
 
+
+    @property
+    def offsets(self):
+        return self._offsets
+
+
     @property
     def formatter(self):
         return self._formatter
-
-
-
-
-
-
 
 
 class VerseSpanIt(object):
@@ -403,19 +647,19 @@ class VerseSpanIt(object):
     def next(self):
         if self._last is None:
             self._last = self._span.first
-        elif self._last <= self._span.last:
+        elif self._last < self._span.last:
             bibleinfo = self._last.model.bibleinfo
 
-            book = self._last.book
-            chapter = self._last.chapter
+            book_idx = self._last.book
+            chapter_idx = self._last.chapter - 1
             verse = self._last.verse
 
-            if verse < bibleinfo[book][chapter - 1]:
-                n = self._span.model.Verse(book, chapter, verse + 1)
-            elif chapter < len(bibleinfo[book]):
-                n = self._span.model.Verse(book, chapter + 1, 1)
-            elif book < len(bibleinfo) - 1:
-                n = self._span.model.Verse(book + 1, 1, 1)
+            if verse < bibleinfo[book_idx][chapter_idx]:
+                n = self._span.model.Verse(book_idx, chapter_idx + 1, verse + 1)
+            elif chapter_idx + 1 < len(bibleinfo[book_idx]):
+                n = self._span.model.Verse(book_idx, chapter_idx + 2, 1)
+            elif book_idx < len(bibleinfo) - 1:
+                n = self._span.model.Verse(book_idx + 1, 1, 1)
             else:
                 raise StopIteration()
 
@@ -426,20 +670,63 @@ class VerseSpanIt(object):
         return self._last
 
 
-def verse_iter(passage_span_or_verse):
-    if hasattr(passage_span_or_verse, 'spans'):
-        p = passage_span_or_verse # passage
+def verse_iter(arg):
+    if is_passage(arg):
+        p = arg # passage
         it = chain(*[iter(s) for s in p])
-    elif hasattr(passage_span_or_verse, 'first') and hasattr(passage_span_or_verse, 'last'):
-        span = passage_span_or_verse # span
+    elif is_span(arg):
+        span = arg # span
         it = iter(span)
-    elif hasattr(passage_span_or_verse, 'book') and hasattr(passage_span_or_verse, 'chapter') and hasattr(passage_span_or_verse, 'verse'):
-        v = passage_span_or_verse # verse
+    elif is_verse(arg):
+        v = arg # verse
         it = iter((v,))
     else:
-        raise Exception('Unknown type')
+        raise TypeError('Unknown type %s' % type(arg))
 
     return it
+
+
+def is_passage(o):
+    if hasattr(o, 'spans'):
+        return True
+    else:
+        return False
+
+
+def is_span(o):
+    if hasattr(o, 'first') and hasattr(o, 'last'):
+        return True
+    else:
+        return False
+
+
+def is_verse(o):
+    if hasattr(o, 'book') and hasattr(o, 'chapter') and hasattr(o, 'verse'):
+        return True
+    else:
+        return False
+
+
+def count_verses(*args):
+    num_verses = 0
+
+    if len(args) == 1:
+        arg = args[0]
+        if is_passage(arg):
+            passage = arg
+            for s in passage.spans:
+                num_verses += _count_span_verses(s)
+        elif is_span(arg):
+            num_verses = _count_span_verses(arg)
+        elif is_verse(arg):
+            num_verses = 1
+        else:
+            raise TypeError('unrecognized type; cannot extract verses.')
+    else:
+        raise TypeError('incorrect number of arguments to count_verses()')
+
+    return num_verses
+
 
 
 
