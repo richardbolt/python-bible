@@ -378,7 +378,7 @@ def bible_data(translation=None):
         {
             'testament': 'NT',
             'verse_counts': [15],
-            'name': '3John',
+            'name': '3 John',
             'abbrs': ['3john', '3j', '3jo', '3 jo', '3jn', '3 jn']
         },
         {
@@ -426,6 +426,8 @@ def bible_data(translation=None):
             bible = add_omission(bible, 42, 23, 17)      # Luke 23:17
             bible = add_omission(bible, 44, 15, 34)      # Acts 15:34
             bible = add_omission(bible, 44, 28, 29)      # Acts 28:29
+        if translation in ('KJV', 'NIV'): # Also not in the ASV, and some others.
+            bible = add_omission(bible, 64, 1, 15)       # 3 John 15
     
     # send back the bible list var
     return bible
