@@ -275,13 +275,13 @@ class Passage:
             count = self._count_verses(self.start.book, self.start.chapter, start=self.start.verse)
             
             # add number of verses in whole chapters of start book
-            for chapter in range(self.start.chapter, len(self.bible[self.start.book - 1]['verse_counts'])):
+            for chapter in range(self.start.chapter + 1, len(self.bible[self.start.book - 1]['verse_counts']) + 1):
                 count += self._count_verses(self.start.book, chapter)
             
             # add total number of verses in whole books between start and end
             for book in range(self.start.book + 1, self.end.book):
-                for chapter in self.bible[book - 1]['verse_counts']:
-                    count += self._count_verses(self.start.book, chapter)
+                for chapter in range(1, len(self.bible[book - 1]['verse_counts']) + 1):
+                    count += self._count_verses(book, chapter)
             
             # add number of verses in whole chapters of end book
             for chapter in range(1, self.end.chapter):
