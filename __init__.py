@@ -14,7 +14,7 @@ class RangeError(Exception):
     """Exception class for books, verses, and chapters out of range"""
     pass
     
-class Verse:
+class Verse(object):
     """Class to represent a Bible reference (book, chapter, and verse)"""
     
     def __init__(self, *args):
@@ -145,6 +145,19 @@ class Verse:
         # return the formatted value
         return f.strip()
     
+    def __eq__(self, other):
+        if type(self) != type(other):
+            return False
+        
+        # book, chapter, verse, and translation must be equal.
+        if (self.book, self.chapter, self.verse, self.translation) == (other.book, other.chapter, other.verse, other.translation):
+            return True
+        
+        return False
+    
+    def __ne__(self, other):
+        return not self.__eq__(other)
+    
     def __str__(self):
         """Casts a verse object into a normalized string
         This is especially useful for saving to a database"""
@@ -159,7 +172,7 @@ class Verse:
             return v
         
 
-class Passage:
+class Passage(object):
     """A passage of scripture with start and end verses"""
     
     def __init__(self, start, end):
@@ -172,13 +185,13 @@ class Passage:
                   
                   Passage('Rom. 1:1', 'Rom. 1:8')"""
         
-        # if the args passed were objects, add them to the Passage
+        # if the args passed were Verse objects, add them to the Passage
         # directly, otherwise try to interpret them as strings  
-        if type(start).__name__ == 'instance':
+        if type(start) is Verse:
             self.start = start
         else:
             self.start = Verse(start)
-        if type(end).__name__ == 'instance':
+        if type(end) is Verse:
             self.end = end
         else:
             self.end = Verse(end)
@@ -293,6 +306,19 @@ class Passage:
         # return the count
         return count
     
+    def __eq__(self, other):
+        if type(self) != type(other):
+            return False
+
+        # start (verse), and end, must be equal.
+        if (self.start, self.end) == (other.start, other.end):
+            return True
+
+        return False
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+    
     def __str__(self):
         """Casts a passage object into a normalized string
         This would be useful for saving to a database if the __init__ for this
@@ -366,12 +392,26 @@ class Passage:
              End:    Rom. 1:1
              Output: Acts 1:1 - Romans 1:1"""
         
+        # a single verse, not a true passage
+        if self.start == self.end:
+            
+            # No chapters, ie: 2 John, 3 John, Jude...
+            if len(self.start.bible[self.start.book-1]['verse_counts']) == 1:
+                f = self.format('B V')
+            
+            f = self.format('B C:V')
+        
         # start and end are in the same book
-        if self.start.book == self.end.book:
+        elif self.start.book == self.end.book:
             
             # start and end are in the same chapter of the same book
             if self.start.chapter == self.end.chapter:
-                f = self.format('B C:V-v')
+                
+                # No chapters.
+                if len(self.start.bible[self.start.book-1]['verse_counts']) == 1:
+                    f = self.format('B V-v')
+                else:
+                    f = self.format('B C:V-v')
             
             # start and end are in different chapters of the same book
             else:
@@ -379,7 +419,19 @@ class Passage:
         
         # start and end are in different books
         else:
-            f = self. format('B C:V - b c:v')
+            # No chapters.
+            if len(self.start.bible[self.start.book-1]['verse_counts']) == 1 and len(self.end.bible[self.end.book-1]['verse_counts']) == 1:
+                f = self.format('B V - b v')
+            
+             # No chapters in start.
+            elif len(self.start.bible[self.start.book-1]['verse_counts']) == 1:
+                f = self.format('B V - b c:v')
+            
+            # No chapters in end.
+            elif len(self.end.bible[self.end.book-1]['verse_counts']) == 1:
+                f = self.format('B C:V - b v')
+            else:
+                f = self.format('B C:V - b c:v')
         
         # return the formatted value
         return f
